@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "981258673838",
+    "project_id": "test27052024",
+    "storage_bucket": "test27052024.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:981258673838:android:4fe7af622aa4433033173f",
+        "android_client_info": {
+          "package_name": "com.example.surfhey"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRoa2nwsCk8aF9yU7NE4yjg5iW72KR8u0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
