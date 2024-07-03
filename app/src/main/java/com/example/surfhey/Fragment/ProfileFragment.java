@@ -2,21 +2,27 @@ package com.example.surfhey.Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.surfhey.Firestore;
+import com.example.surfhey.LoginActivity;
 import com.example.surfhey.OptionActivity;
 import com.example.surfhey.R;
 import com.example.surfhey.adapter.surfGridAdapter;
 import com.example.surfhey.modelItem.itemSurf;
 import com.example.surfhey.modelItem.modelSurf;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 
@@ -26,6 +32,8 @@ import java.util.ArrayList;
  * create an instance of this fragment.
  */
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "Firestore";
+    private Firestore FSdb;
 
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
@@ -62,8 +70,19 @@ public class ProfileFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
         TextView userName = view.findViewById(R.id.tvProfile);
-        //HOW TO TRANSFER USERID FROM THE PREVIOUS ACTIVITY
-
+        FSdb = new Firestore();
+        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
+                (new OnCompleteListener<String>() {
+            @Override
+            public void onComplete(@NonNull Task<String> task) {
+                if (task.isSuccessful()) {
+                    userName.setText(task.getResult());
+                }else {
+                    Log.w(TAG, "Error retrieving username"
+                            , task.getException());
+                }
+            }
+        });
 
         recycleGrid = view.findViewById(R.id.recycleGrid);
         setupRecyclerView();

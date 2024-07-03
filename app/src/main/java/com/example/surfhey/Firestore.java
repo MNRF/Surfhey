@@ -104,4 +104,24 @@ public class Firestore {
                     }
                 });
     }
+
+    public Task<String> getUsernamebyUserID(String userID) {
+        return db.collection("logcred").document(userID)
+                .get()
+                .continueWith(new Continuation<DocumentSnapshot, String>() {
+                    @Override
+                    public String then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                return document.getString("username");
+                            } else {
+                                throw new Exception("No matching document found");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
 }

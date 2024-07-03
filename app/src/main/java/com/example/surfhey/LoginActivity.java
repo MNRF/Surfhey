@@ -18,6 +18,7 @@ import com.google.android.gms.tasks.Task;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "Firestore";
     private Firestore FSdb;
+    public static String userID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
                                                         (@NonNull Task<String> task)
                                                 {
                                                     if (task.isSuccessful()) {
-                                                        String userID = task.getResult();
+                                                        userID = task.getResult();
                                                         Intent intent = new Intent
                                                                 (LoginActivity.this
                                                                 , MainActivity.class);
