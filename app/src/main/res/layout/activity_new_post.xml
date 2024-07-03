@@ -17,7 +17,7 @@
         app:layout_constraintTop_toBottomOf="@+id/constraintLayout3">
 
         <EditText
-            android:id="@+id/editTextText3"
+            android:id="@+id/loginUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -54,7 +54,7 @@
             android:textColor="@color/gray_form"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/editTextText3" />
+            app:layout_constraintTop_toBottomOf="@+id/loginUsername" />
 
         <EditText
             android:id="@+id/editTextNumber"
