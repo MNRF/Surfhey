@@ -2,29 +2,33 @@ package com.example.surfhey.Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.surfhey.Firestore;
+import com.example.surfhey.LoginActivity;
 import com.example.surfhey.OptionActivity;
 import com.example.surfhey.R;
 import com.example.surfhey.adapter.surfGridAdapter;
 import com.example.surfhey.modelItem.itemSurf;
 import com.example.surfhey.modelItem.modelSurf;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ProfileFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "Firestore";
+    private Firestore FSdb;
 
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
@@ -33,6 +37,8 @@ public class ProfileFragment extends Fragment {
     private String mParam2;
     private RecyclerView recycleGrid;
     private ArrayList<modelSurf> surfList;
+    private TextView userName; // Define userName here
+
     public ProfileFragment() {
         // Required empty public constructor
     }
@@ -60,8 +66,23 @@ public class ProfileFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
+        userName = view.findViewById(R.id.tvProfile); // Initialize userName here
+        FSdb = new Firestore();
+        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
+                (new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(@NonNull Task<String> task) {
+                        if (task.isSuccessful()) {
+                            userName.setText(task.getResult());
+                        } else {
+                            Log.w(TAG, "Error retrieving username", task.getException());
+                        }
+                    }
+                });
+
         recycleGrid = view.findViewById(R.id.recycleGrid);
         setupRecyclerView();
+
         // Find the ImageView and set up the click listener
         ImageView optionImageView = view.findViewById(R.id.Option_btn);
         optionImageView.setOnClickListener(new View.OnClickListener() {
@@ -79,7 +100,7 @@ public class ProfileFragment extends Fragment {
         // Set up the RecyclerView
         recycleGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         surfList = new ArrayList<>();
-        for (int i = 0; i< itemSurf.posterItem.length; i++){
+        for (int i = 0; i < itemSurf.posterItem.length; i++) {
             modelSurf modelSurf = new modelSurf(
                     itemSurf.judulItem[i],
                     itemSurf.dateItem[i],
@@ -90,5 +111,22 @@ public class ProfileFragment extends Fragment {
         }
         surfGridAdapter surfGridAdapter = new surfGridAdapter(surfList, getContext());
         recycleGrid.setAdapter(surfGridAdapter);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh data here when fragment resumes
+        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
+                (new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(@NonNull Task<String> task) {
+                        if (task.isSuccessful()) {
+                            userName.setText(task.getResult());
+                        } else {
+                            Log.w(TAG, "Error retrieving username", task.getException());
+                        }
+                    }
+                });
     }
 }

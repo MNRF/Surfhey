@@ -55,7 +55,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
-            android:id="@+id/editTextText3"
+            android:id="@+id/loginUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -80,8 +80,8 @@
             android:fontFamily="@font/plusjakartasans_bold"
             android:text="Surfer ID"
             android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="@+id/editTextText3"
-            app:layout_constraintTop_toBottomOf="@+id/editTextText3" />
+            app:layout_constraintStart_toStartOf="@+id/loginUsername"
+            app:layout_constraintTop_toBottomOf="@+id/loginUsername" />
 
         <EditText
             android:id="@+id/editTextText4"
@@ -92,7 +92,7 @@
             android:ems="10"
             android:fontFamily="@font/plusjakartasans_regular"
             android:hint="andrewtasbih"
-            android:inputType="textPassword"
+            android:inputType="text"
             android:paddingStart="16dp"
             android:paddingLeft="20dp"
             android:paddingTop="4dp"
