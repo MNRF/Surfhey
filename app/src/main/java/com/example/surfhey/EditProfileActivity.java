@@ -92,7 +92,6 @@ public class EditProfileActivity extends AppCompatActivity {
                 bottomSheetDialog.setContentView(view1);
                 bottomSheetDialog.show();
 
-
                 TextInputEditText editText = view1.findViewById(R.id.editText);
                 MaterialButton dismissBtn = view1.findViewById(R.id.dismiss);
 
