@@ -11,11 +11,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firestore.v1.Document;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class Firestore {
 
@@ -40,31 +38,31 @@ public class Firestore {
     public Task<Boolean> isUsernameExist(String username) {
         return db.collection("logcred").whereEqualTo("username", username).get()
                 .continueWith(new Continuation<QuerySnapshot, Boolean>() {
-            @Override
-            public Boolean then(@NonNull Task<QuerySnapshot> task) throws Exception {
-                if (task.isSuccessful()) {
-                    QuerySnapshot document = task.getResult();
-                    return !document.isEmpty();
-                } else {
-                    throw task.getException();
-                }
-            }
-        });
+                    @Override
+                    public Boolean then(@NonNull Task<QuerySnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot document = task.getResult();
+                            return !document.isEmpty();
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
     }
 
     public Task<Boolean> isUserIDExist(String userID) {
         return db.collection("logcred").document(userID).get().continueWith
                 (new Continuation<DocumentSnapshot, Boolean>() {
-            @Override
-            public Boolean then(@NonNull Task<DocumentSnapshot> task) throws Exception {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    return document.exists();
-                } else {
-                    throw task.getException();
-                }
-            }
-        });
+                    @Override
+                    public Boolean then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            return document.exists();
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
     }
 
     public Task<Boolean> isLogCredValid(String username, String userpassword) {
@@ -117,6 +115,72 @@ public class Firestore {
                                 return document.getString("username");
                             } else {
                                 throw new Exception("No matching document found");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<String> getUserPasswordbyUserID(String userID) {
+        return db.collection("logcred").document(userID)
+                .get()
+                .continueWith(new Continuation<DocumentSnapshot, String>() {
+                    @Override
+                    public String then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                return document.getString("userpassword");
+                            } else {
+                                throw new Exception("No matching document found");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<Void> updateUsername(String userid, String oldPassword, String newUsername) {
+        return db.collection("logcred").document(userid)
+                .get()
+                .continueWithTask(new Continuation<DocumentSnapshot, Task<Void>>() {
+                    @Override
+                    public Task<Void> then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists() && document.getString("userpassword").equals(oldPassword)) {
+                                Map<String, Object> updates = new HashMap<>();
+                                updates.put("username", newUsername);
+                                updates.put("datemodified", Calendar.getInstance().getTime());
+                                return db.collection("logcred").document(userid).update(updates);
+                            } else {
+                                throw new Exception("Invalid password");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<Void> updatePassword(String username, String userid, String newPassword) {
+        return db.collection("logcred").document(userid)
+                .get()
+                .continueWithTask(new Continuation<DocumentSnapshot, Task<Void>>() {
+                    @Override
+                    public Task<Void> then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists() && document.getString("username").equals(username)) {
+                                Map<String, Object> updates = new HashMap<>();
+                                updates.put("userpassword", newPassword);
+                                updates.put("datemodified", Calendar.getInstance().getTime());
+                                return db.collection("logcred").document(userid).update(updates);
+                            } else {
+                                throw new Exception("Invalid username");
                             }
                         } else {
                             throw task.getException();
