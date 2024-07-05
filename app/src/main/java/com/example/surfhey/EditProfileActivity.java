@@ -38,7 +38,7 @@ public class EditProfileActivity extends AppCompatActivity {
             finish();
         });
 
-        TextView userName = findViewById(R.id.loginUsername);
+        TextView userName = findViewById(R.id.editTextText3);
         TextView userID = findViewById(R.id.editTextText4);
         TextView saveButton = findViewById(R.id.button);
         FSdb = new Firestore();
@@ -143,6 +143,43 @@ public class EditProfileActivity extends AppCompatActivity {
                     public void onDismiss(DialogInterface dialogInterface) {
                         Toast.makeText(EditProfileActivity.this
                                 , "Bottom sheet dismissed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+
+        Button BtnBottomBar2 = findViewById(R.id.btnBottomBar2);
+        BtnBottomBar2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(EditProfileActivity.this);
+                View view1 = LayoutInflater.from(EditProfileActivity.this).inflate(R.layout.bottom_sheet_acc_delete, null);
+                bottomSheetDialog.setContentView(view1);
+                bottomSheetDialog.show();
+
+                Button ButtonNo = view1.findViewById(R.id.btn_no_delete_acc);
+                ButtonNo.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        bottomSheetDialog.dismiss();
+                    }
+                });
+
+                Button ButtonYes = view1.findViewById(R.id.btn_yes_delete_acc);
+                ButtonYes.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(EditProfileActivity.this, LoginActivity.class);
+                        startActivity(intent);
+
+                        bottomSheetDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialogInterface) {
+                                Toast.makeText(EditProfileActivity.this, "Account Deletion Successfull", Toast.LENGTH_SHORT).show();
+                                // Toast.makeText(LoginActivity.this, text1, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        bottomSheetDialog.dismiss();
                     }
                 });
             }

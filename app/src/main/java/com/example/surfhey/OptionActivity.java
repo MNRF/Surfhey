@@ -8,11 +8,14 @@ import android.widget.ImageView;
 import androidx.appcompat.widget.AppCompatButton;
 
 public class OptionActivity extends AppCompatActivity {
+    SurveyDatabaseHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_option);
+
+        db = new SurveyDatabaseHelper(this);
 
         // Find the ImageView and set up the click listener for back button
         ImageView backButton = findViewById(R.id.back_btn);
@@ -40,6 +43,8 @@ public class OptionActivity extends AppCompatActivity {
         logOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                LoginActivity.userID = "";
+                db.removeLoginCredentials();
                 // Start the EditProfileActivity
                 Intent intent = new Intent(OptionActivity.this, LoginActivity.class);
                 startActivity(intent);
