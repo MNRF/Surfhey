@@ -14,6 +14,36 @@
         app:layout_constraintTop_toBottomOf="@+id/tvEditPicture">
 
         <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/plusjakartasans_bold"
+            android:text="Account"
+            android:textColor="@color/black"
+            app:layout_constraintStart_toStartOf="@+id/btnBottomBar"
+            app:layout_constraintTop_toBottomOf="@+id/btnBottomBar" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnBottomBar2"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_white"
+            android:drawableEnd="@drawable/icon_next"
+            android:fontFamily="@font/plusjakartasans_regular"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
+            android:padding="10dp"
+            android:text="Delete Account"
+            android:textAlignment="textStart"
+            android:textAllCaps="false"
+            android:textColor="@color/gray_form"
+            app:layout_constraintEnd_toEndOf="@+id/btnBottomBar"
+            app:layout_constraintStart_toStartOf="@+id/textView4"
+            app:layout_constraintTop_toBottomOf="@+id/textView4" />
+
+        <TextView
             android:id="@+id/textView3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -27,15 +57,14 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnBottomBar"
             android:layout_width="match_parent"
-            android:layout_height="28dp"
+            android:layout_height="40dp"
             android:layout_marginTop="12dp"
             android:background="@drawable/bg_white"
             android:drawableEnd="@drawable/icon_next"
             android:fontFamily="@font/plusjakartasans_regular"
-            android:paddingStart="16dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="6dp"
+            android:padding="10dp"
+            android:paddingEnd="20dp"
+            android:paddingStart="20dp"
             android:text="Change Password"
             android:textAlignment="textStart"
             android:textAllCaps="false"
@@ -55,7 +84,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
-            android:id="@+id/loginUsername"
+            android:id="@+id/editTextText3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -64,9 +93,8 @@
             android:fontFamily="@font/plusjakartasans_regular"
             android:hint="Andrew"
             android:inputType="text"
-            android:paddingStart="16dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="6dp"
+            android:paddingStart="20dp"
+            android:padding="10dp"
             android:textColor="@color/black"
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="@+id/textView6"
@@ -80,8 +108,8 @@
             android:fontFamily="@font/plusjakartasans_bold"
             android:text="Surfer ID"
             android:textColor="@color/black"
-            app:layout_constraintStart_toStartOf="@+id/loginUsername"
-            app:layout_constraintTop_toBottomOf="@+id/loginUsername" />
+            app:layout_constraintStart_toStartOf="@+id/editTextText3"
+            app:layout_constraintTop_toBottomOf="@+id/editTextText3" />
 
         <EditText
             android:id="@+id/editTextText4"
@@ -93,10 +121,8 @@
             android:fontFamily="@font/plusjakartasans_regular"
             android:hint="andrewtasbih"
             android:inputType="text"
-            android:paddingStart="16dp"
-            android:paddingLeft="20dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="6dp"
+            android:paddingStart="20dp"
+            android:padding="10dp"
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="@+id/textView7"
             app:layout_constraintTop_toBottomOf="@+id/textView7" />
@@ -177,9 +203,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:fontFamily="@font/plusjakartasans_regular"
+        android:fontFamily="@font/plusjakartasans_bold"
         android:text="Edit Picture"
-        android:textColor="@color/black"
+        android:textColor="@color/blue"
         app:layout_constraintEnd_toEndOf="@+id/imageView11"
         app:layout_constraintStart_toStartOf="@+id/imageView11"
         app:layout_constraintTop_toBottomOf="@+id/imageView11" />

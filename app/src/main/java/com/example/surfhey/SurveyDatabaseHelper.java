@@ -82,4 +82,19 @@ public class SurveyDatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return userId;
     }
+
+    public void removeLoginCredentials() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("username", "");
+        contentValues.put("userid", "");
+        contentValues.put("userpassword", "");
+
+        // Delete any existing rows
+        db.delete("account", null, null);
+
+        // Insert the new row
+        db.insert("account", null, contentValues);
+        db.close();
+    }
 }
