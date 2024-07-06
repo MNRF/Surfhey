@@ -48,6 +48,7 @@ public class OptionActivity extends AppCompatActivity {
                 // Start the EditProfileActivity
                 Intent intent = new Intent(OptionActivity.this, LoginActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
     }

@@ -27,11 +27,13 @@ public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "Firestore";
     private Firestore FSdb;
     private static final int PICK_IMAGE_REQUEST = 1;
+    SurveyDatabaseHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editprofile);
+        db = new SurveyDatabaseHelper(this);
 
         ImageView imageView = findViewById(R.id.back_btn_editProfile);
         imageView.setOnClickListener(view -> {
@@ -169,8 +171,45 @@ public class EditProfileActivity extends AppCompatActivity {
                 ButtonYes.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent = new Intent(EditProfileActivity.this, LoginActivity.class);
-                        startActivity(intent);
+
+                        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
+                            @Override
+                            public void onComplete(@NonNull Task<String> task) {
+                                if (task.isSuccessful()) {
+                                    String username = task.getResult();
+                                    FSdb.getUserPasswordbyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<String> task) {
+                                            if (task.isSuccessful()) {
+                                                String userpassword = task.getResult();
+                                                FSdb.deleteAccount(username, LoginActivity.userID, userpassword).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        if (task.isSuccessful()) {
+                                                            LoginActivity.userID = "";
+                                                            db.removeLoginCredentials();
+                                                            Intent intent = new Intent(EditProfileActivity.this, LoginActivity.class);
+                                                            startActivity(intent);
+                                                            Toast.makeText(EditProfileActivity.this, "Account deleted succesfuly", Toast.LENGTH_SHORT);
+                                                            finish();
+                                                        }else {
+                                                            Log.w(TAG, "Error deleting user account"
+                                                                    , task.getException());
+                                                        }
+                                                    }
+                                                });
+                                            }else {
+                                                Log.w(TAG, "Error retrieving user password"
+                                                        , task.getException());
+                                            }
+                                        }
+                                    });
+                                }else {
+                                    Log.w(TAG, "Error retrieving user name"
+                                            , task.getException());
+                                }
+                            }
+                        });
 
                         bottomSheetDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override

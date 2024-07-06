@@ -40,6 +40,7 @@ public class LoginActivity extends AppCompatActivity {
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
+        FSdb = new Firestore();
         dbHelper = new SurveyDatabaseHelper(this);
 
         // Check if a session exists
@@ -49,6 +50,7 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
             finish(); // Finish LoginActivity
+            Toast.makeText(LoginActivity.this, "Login Credential is not Valid", Toast.LENGTH_SHORT);
         }
 
         TextView signUpButton = findViewById(R.id.goSignUp);
@@ -60,7 +62,6 @@ public class LoginActivity extends AppCompatActivity {
 
         Button loginButton = findViewById(R.id.button5);
         loginButton.setOnClickListener(view -> {
-            FSdb = new Firestore();
 
             String username = usernameEditText.getText().toString();
             String password = userIDEditText.getText().toString();
@@ -107,11 +108,7 @@ public class LoginActivity extends AppCompatActivity {
                 String text2 = Objects.requireNonNull(editText2.getText()).toString();
                 String text3 = Objects.requireNonNull(editText3.getText()).toString();
 
-                if (text1.isEmpty() && text2.isEmpty() && text3.isEmpty()) {
-
-                } else if (!text2.equals(text3)) {
-
-                }else {
+                if ((!text1.isEmpty() && !text2.isEmpty() && !text3.isEmpty()) && text2.equals(text3)) {
                     FSdb.isUserIDExist(text1).addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             if (task.getResult()) {
@@ -124,15 +121,31 @@ public class LoginActivity extends AppCompatActivity {
 
                                 Button ButtonNo = view11.findViewById(R.id.btn_no_reset_pass);
                                 ButtonNo.setOnClickListener(v -> bottomSheetDialog1.dismiss());
-
                                 Button ButtonYes = view11.findViewById(R.id.btn_yes_reset_pass);
                                 ButtonYes.setOnClickListener(v -> {
-                                    FSdb.updatePassword()
-                                    bottomSheetDialog1.setOnDismissListener(dialogInterface -> {
-                                        Toast.makeText(LoginActivity.this, "Password Change Successfull", Toast.LENGTH_SHORT).show();
-                                        // Toast.makeText(LoginActivity.this, text1, Toast.LENGTH_SHORT).show();
+                                    FSdb.getUsernamebyUserID(text1).addOnCompleteListener(new OnCompleteListener<String>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<String> task) {
+                                            if (task.isSuccessful()) {
+                                                FSdb.updatePassword(task.getResult(), text1, text2).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        if (task.isSuccessful()) {
+                                                            bottomSheetDialog1.setOnDismissListener(dialogInterface -> {
+                                                                Toast.makeText(LoginActivity.this, "Password Change Successfull", Toast.LENGTH_SHORT).show();
+                                                                Toast.makeText(LoginActivity.this, text1, Toast.LENGTH_SHORT).show();
+                                                            });
+                                                            bottomSheetDialog1.dismiss();
+                                                        } else {
+                                                            Log.w(TAG, "Error updating userpassword", task.getException());
+                                                        }
+                                                    }
+                                                });
+                                            } else {
+                                                Log.w(TAG, "Error retrieving username", task.getException());
+                                            }
+                                        }
                                     });
-                                    bottomSheetDialog1.dismiss();
                                 });
                             } else {
 

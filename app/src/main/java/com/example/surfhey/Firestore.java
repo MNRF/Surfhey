@@ -67,7 +67,7 @@ public class Firestore {
 
     public Task<Boolean> isLogCredValid(String username, String userpassword) {
         return db.collection("logcred").whereEqualTo("username", username)
-                .whereEqualTo("userpassword", userpassword)
+                .whereEqualTo("userpassword", userpassword).whereEqualTo("userstatus", "active")
                 .get()
                 .continueWith(new Continuation<QuerySnapshot, Boolean>() {
                     @Override
@@ -177,6 +177,29 @@ public class Firestore {
                             if (document.exists() && document.getString("username").equals(username)) {
                                 Map<String, Object> updates = new HashMap<>();
                                 updates.put("userpassword", newPassword);
+                                updates.put("datemodified", Calendar.getInstance().getTime());
+                                return db.collection("logcred").document(userid).update(updates);
+                            } else {
+                                throw new Exception("Invalid username");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<Void> deleteAccount(String username, String userid, String newPassword) {
+        return db.collection("logcred").document(userid)
+                .get()
+                .continueWithTask(new Continuation<DocumentSnapshot, Task<Void>>() {
+                    @Override
+                    public Task<Void> then(@NonNull Task<DocumentSnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists() && document.getString("username").equals(username)) {
+                                Map<String, Object> updates = new HashMap<>();
+                                updates.put("userstatus", "inactive");
                                 updates.put("datemodified", Calendar.getInstance().getTime());
                                 return db.collection("logcred").document(userid).update(updates);
                             } else {

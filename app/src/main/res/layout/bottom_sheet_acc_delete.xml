@@ -62,7 +62,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:fontFamily="@font/plusjakartasans_regular"
-        android:text="You Only Can Only Do This Once."
+        android:text="You only can only do this once."
         android:textAlignment="center"
         android:textColor="@color/black"
         android:textSize="14sp"
