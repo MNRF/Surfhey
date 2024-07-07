@@ -19,6 +19,7 @@ public class CreateSurveyActivity extends AppCompatActivity {
     private SurveyDatabaseHelper dbHelper;
     private long surveyId;
     private LinearLayout questionListLayout;
+    public static String postTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,10 +43,12 @@ public class CreateSurveyActivity extends AppCompatActivity {
             }
         });
 
+        EditText postTitleField = findViewById(R.id.editText3);
         ImageView backButton = findViewById(R.id.back_btn_createSurvey);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                postTitle = postTitleField.getText().toString();
                 Intent intent = new Intent(CreateSurveyActivity.this, NewPostActivity.class);
                 startActivity(intent);
             }

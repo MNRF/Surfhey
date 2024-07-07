@@ -81,7 +81,7 @@ public class ProfileFragment extends Fragment {
                 });
 
         recycleGrid = view.findViewById(R.id.recycleGrid);
-        setupRecyclerView();
+        fetchDataAndSetupRecyclerView();
 
         // Find the ImageView and set up the click listener
         ImageView optionImageView = view.findViewById(R.id.Option_btn);
@@ -96,16 +96,31 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
+    private void fetchDataAndSetupRecyclerView() {
+        FSdb.getCurrentUserPostAndUpdateItems(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    setupRecyclerView();
+                } else {
+                    Log.e("HomeFragment", "Failed to fetch data from Firestore", task.getException());
+                }
+            }
+        });
+    }
+
     private void setupRecyclerView() {
         // Set up the RecyclerView
         recycleGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         surfList = new ArrayList<>();
-        for (int i = 0; i < itemSurf.posterItem.length; i++) {
+        for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
             modelSurf modelSurf = new modelSurf(
-                    itemSurf.judulItem[i],
-                    itemSurf.dateItem[i],
-                    itemSurf.posterItem[i],
-                    itemSurf.detailItem[i]
+                    itemSurf.itemAuthorname[i],
+                    itemSurf.itemTitle[i],
+                    itemSurf.itemDate[i],
+                    itemSurf.itemImageURL[i],
+                    itemSurf.itemDetail[i],
+                    itemSurf.itemLikes[i]
             );
             surfList.add(modelSurf);
         }

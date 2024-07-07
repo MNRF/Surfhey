@@ -34,13 +34,14 @@ public class ListActivity extends AppCompatActivity {
         }
         rv_surf.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         items = new ArrayList<>();
-        for (int i = 0; i < itemSurf.posterItem.length; i++) {
+        for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
             modelSurf modelSurf = new modelSurf(
-                    itemSurf.judulItem[i],
-                    itemSurf.dateItem[i],
-                    itemSurf.posterItem[i],
-                    itemSurf.detailItem[i]
-
+                    itemSurf.itemAuthorname[i],
+                    itemSurf.itemTitle[i],
+                    itemSurf.itemDate[i],
+                    itemSurf.itemImageURL[i],
+                    itemSurf.itemDetail[i],
+                    itemSurf.itemLikes[i]
             );
             items.add(modelSurf);
         }

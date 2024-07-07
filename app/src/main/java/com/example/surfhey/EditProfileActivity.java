@@ -33,6 +33,8 @@ public class EditProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editprofile);
+
+        FSdb = new Firestore();
         db = new SurveyDatabaseHelper(this);
 
         ImageView imageView = findViewById(R.id.back_btn_editProfile);
@@ -43,7 +45,6 @@ public class EditProfileActivity extends AppCompatActivity {
         TextView userName = findViewById(R.id.editTextText3);
         TextView userID = findViewById(R.id.editTextText4);
         TextView saveButton = findViewById(R.id.button);
-        FSdb = new Firestore();
         FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
                 (new OnCompleteListener<String>() {
                     @Override

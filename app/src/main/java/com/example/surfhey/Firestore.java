@@ -5,14 +5,23 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.surfhey.modelItem.itemSurf;
 import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firestore.v1.Document;
 
+
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Firestore {
@@ -208,6 +217,146 @@ public class Firestore {
                         } else {
                             throw task.getException();
                         }
+                    }
+                });
+    }
+
+    public void createPost(String authorid, String imageurl, String title, String description) {
+        Map<String, Object> post = new HashMap<>();
+        post.put("authorid", authorid);
+        post.put("image1", imageurl);
+        post.put("title", title);
+        post.put("description", description);
+        post.put("likes", 0);
+        post.put("poststatus", "active");
+        post.put("datecreated", Calendar.getInstance().getTime());
+        post.put("datemodified", Calendar.getInstance().getTime());
+
+        db.collection("post").document().set(post);
+    }
+
+
+    public Task<Void> getPostAndUpdateItems() {
+        return db.collection("post").orderBy("datecreated", Query.Direction.DESCENDING)
+                .get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot qs = task.getResult();
+                        if (qs != null && !qs.isEmpty()) {
+                            List<Task<String>> usernameTasks = new ArrayList<>();
+                            List<String> authornames = new ArrayList<>();
+                            List<String> imageURLS = new ArrayList<>();
+                            List<String> dates = new ArrayList<>();
+                            List<String> titles = new ArrayList<>();
+                            List<String> details = new ArrayList<>();
+                            List<String> likes = new ArrayList<>();
+
+                            for (DocumentSnapshot ds : qs.getDocuments()) {
+                                imageURLS.add(ds.getString("imageurl"));
+                                Timestamp timestamp = ds.getTimestamp("datecreated");
+                                if (timestamp != null) {
+                                    Date date = timestamp.toDate();
+                                    dates.add(date.toString()); // Convert Date to String
+                                } else {
+                                    dates.add("Unknown date");
+                                }
+                                titles.add(ds.getString("title"));
+                                details.add(ds.getString("description"));
+                                likes.add(ds.getLong("likes").toString());
+                                Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
+                                        .addOnCompleteListener(usernameTaskResult -> {
+                                            if (usernameTaskResult.isSuccessful()) {
+                                                authornames.add(usernameTaskResult.getResult());
+                                            } else {
+                                                authornames.add("Unknown Author");
+                                                Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
+                                            }
+                                        }).continueWithTask(usernameCompleteTask -> Tasks.forResult(null));
+
+                                usernameTasks.add(usernameTask);
+                            }
+
+                            // Wait for all username retrievals to complete
+                            return Tasks.whenAll(usernameTasks)
+                                    .continueWith(task1 -> {
+                                        // Update itemSurf class with retrieved data
+                                        itemSurf.updateData(
+                                                authornames.toArray(new String[0]),
+                                                imageURLS.toArray(new String[0]),
+                                                dates.toArray(new String[0]),
+                                                titles.toArray(new String[0]),
+                                                details.toArray(new String[0]),
+                                                likes.toArray(new String[0])
+                                        );
+                                        return null;
+                                    });
+                        } else {
+                            throw new Exception("No matching document found");
+                        }
+                    } else {
+                        throw task.getException();
+                    }
+                });
+    }
+
+    public Task<Void> getCurrentUserPostAndUpdateItems(String userID) {
+        return db.collection("post").orderBy("datecreated", Query.Direction.DESCENDING)
+                .get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot qs = task.getResult();
+                        if (qs != null && !qs.isEmpty()) {
+                            List<Task<String>> usernameTasks = new ArrayList<>();
+                            List<String> authornames = new ArrayList<>();
+                            List<String> imageURLS = new ArrayList<>();
+                            List<String> dates = new ArrayList<>();
+                            List<String> titles = new ArrayList<>();
+                            List<String> details = new ArrayList<>();
+                            List<String> likes = new ArrayList<>();
+
+                            for (DocumentSnapshot ds : qs.getDocuments()) {
+                                Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
+                                        .addOnCompleteListener(usernameTaskResult -> {
+                                            if (usernameTaskResult.isSuccessful() && usernameTaskResult.getResult().equals(userID)) {
+                                                authornames.add(usernameTaskResult.getResult());
+                                                imageURLS.add(ds.getString("imageurl"));
+                                                Timestamp timestamp = ds.getTimestamp("datecreated");
+                                                if (timestamp != null) {
+                                                    Date date = timestamp.toDate();
+                                                    dates.add(date.toString()); // Convert Date to String
+                                                } else {
+                                                    dates.add("Unknown date");
+                                                }
+                                                titles.add(ds.getString("title"));
+                                                details.add(ds.getString("description"));
+                                                likes.add(ds.getLong("likes").toString());
+                                            } else {
+                                                authornames.add("Unknown Author");
+                                                Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
+                                            }
+                                        }).continueWithTask(usernameCompleteTask -> Tasks.forResult(null));
+                                usernameTasks.add(usernameTask);
+                            }
+
+                            // Wait for all username retrievals to complete
+                            return Tasks.whenAll(usernameTasks)
+                                    .continueWith(task1 -> {
+                                        // Update itemSurf class with retrieved data
+                                        itemSurf.updateData(
+                                                authornames.toArray(new String[0]),
+                                                imageURLS.toArray(new String[0]),
+                                                dates.toArray(new String[0]),
+                                                titles.toArray(new String[0]),
+                                                details.toArray(new String[0]),
+                                                likes.toArray(new String[0])
+                                        );
+                                        return null;
+                                    });
+                        } else {
+                            throw new Exception("No matching document found");
+                        }
+                    } else {
+                        throw task.getException();
                     }
                 });
     }

@@ -3,20 +3,25 @@ package com.example.surfhey.modelItem;
 import java.io.Serializable;
 
 public class modelSurf implements Serializable {
-    private String poster,date,title,detailItem;
+    private String authorname, imageurl,date,title,detailItem, likes;
 
-    public modelSurf(String title, String date, String poster, String detailItem) {
+    public modelSurf(String authorname, String title, String date, String imageurl, String detail, String likes) {
+        this.authorname = authorname;
         this.title = title;
         this.date = date;
-        this.poster = poster;
-        this.detailItem = detailItem;
+        this.imageurl = imageurl;
+        this.detailItem = detail;
+        this.likes = likes;
     }
-    public String getPoster() {
-        return poster;
+    public String getAuthorname() {
+        return authorname;
     }
 
-    public String getTitle() {
-        return title;
+    public String getImageURL() {
+        return imageurl;
+    }
+
+    public String getTitle() {return title;
     }
 
     public String getDetail() {
@@ -25,5 +30,8 @@ public class modelSurf implements Serializable {
 
     public String getDate() {
         return date;
+    }
+    public String getLikes() {
+        return likes;
     }
 }

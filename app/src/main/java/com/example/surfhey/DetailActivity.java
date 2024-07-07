@@ -42,16 +42,25 @@ public class DetailActivity extends AppCompatActivity {
         judulSurvey = getIntent().getStringExtra("title");
         String date = getIntent().getStringExtra("date");
         String detail = getIntent().getStringExtra("detail");
-        String poster = getIntent().getStringExtra("poster");
+        String imageurl = getIntent().getStringExtra("image");
+        String authorname = getIntent().getStringExtra("authorname");
+        String likes = getIntent().getStringExtra("likes");
+        String dateAgo = getIntent().getStringExtra("dateAgo");
 
         TextView detailTextView = findViewById(R.id.tvDetail);
         detailTextView.setText(detail);
         TextView dateTextView = findViewById(R.id.tvDate);
         dateTextView.setText(date);
+        TextView authorName = findViewById(R.id.textView4);
+        authorName.setText(authorname);
+        TextView like = findViewById(R.id.textView10);
+        like.setText(likes);
+        TextView dateago = findViewById(R.id.textView5);
+        dateago.setText(dateAgo);
 
 
         ImageView posterImageView = findViewById(R.id.ivPosterD);
-        int drawableResourceId = getResources().getIdentifier(poster, "drawable", getPackageName());
+        int drawableResourceId = getResources().getIdentifier(imageurl, "drawable", getPackageName());
         posterImageView.setImageResource(drawableResourceId);
 
         ImageView btnBack = findViewById(R.id.back_btn);
