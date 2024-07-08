@@ -1,10 +1,14 @@
 package com.example.surfhey;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.net.ParseException;
 
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -12,8 +16,16 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.surfhey.adapter.surfListAdapter;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.firebase.Timestamp;
+
+import java.util.Date;
+import java.util.Locale;
 
 public class DetailActivity extends AppCompatActivity {
     private ProgressBar progressBar;
@@ -26,6 +38,14 @@ public class DetailActivity extends AppCompatActivity {
     private int progressStatus = 20; // initial progress, change as needed
     private int currentQuestion = 0;
     private String judulSurvey;
+    private String date;
+    private String detail;
+    private String imageurl;
+    private String authorname;
+    private String likes;
+    private String dateAgo;
+    private Timestamp timestampCreated;
+    private Firestore FSdb;
 
     private String[] questionTitles = {
             "Mengenal Cara Kamu Manage Waktu!",
@@ -37,15 +57,19 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FSdb = new Firestore();
         setContentView(R.layout.activity_detail);
 
         judulSurvey = getIntent().getStringExtra("title");
-        String date = getIntent().getStringExtra("date");
-        String detail = getIntent().getStringExtra("detail");
-        String imageurl = getIntent().getStringExtra("image");
-        String authorname = getIntent().getStringExtra("authorname");
-        String likes = getIntent().getStringExtra("likes");
-        String dateAgo = getIntent().getStringExtra("dateAgo");
+        date = getIntent().getStringExtra("date");
+        detail = getIntent().getStringExtra("detail");
+        imageurl = getIntent().getStringExtra("image");
+        authorname = getIntent().getStringExtra("authorname");
+        likes = getIntent().getStringExtra("likes");
+        dateAgo = getIntent().getStringExtra("dateAgo");
+        long milliseconds = getIntent().getLongExtra("timestampCreated", 0);
+        int nanoseconds = getIntent().getIntExtra("timestampCreatedNanoseconds", 0);
+        timestampCreated = new Timestamp(milliseconds / 1000, nanoseconds); // Divide milliseconds by 1000 to get seconds
 
         TextView detailTextView = findViewById(R.id.tvDetail);
         detailTextView.setText(detail);
@@ -77,10 +101,23 @@ public class DetailActivity extends AppCompatActivity {
         });
 
         ivMore = findViewById(R.id.ivMore);
-        ivMore.setOnClickListener(new View.OnClickListener() {
+        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
             @Override
-            public void onClick(View v) {
-                showBottomSheetMore();
+            public void onComplete(@NonNull Task<String> task) {
+                if (task.isSuccessful()) {
+                    if (!task.getResult().equals(authorname)) {
+                        ivMore.setVisibility(View.GONE);
+                    }else {
+                        ivMore.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                showBottomSheetMore();
+                            }
+                        });
+                    }
+                } else {
+                    Log.w("Firestore", task.getException());
+                }
             }
         });
     }
@@ -95,6 +132,14 @@ public class DetailActivity extends AppCompatActivity {
             public void onClick(View v) {
                 bottomSheetDialog.dismiss();
                 Intent intent = new Intent(DetailActivity.this, NewPostActivity.class);
+                intent.putExtra("authorname", authorname);
+                intent.putExtra("title", judulSurvey);
+                intent.putExtra("date", date);
+                intent.putExtra("dateAgo", dateAgo);
+                intent.putExtra("image", imageurl);
+                intent.putExtra("detail", detail);
+                intent.putExtra("likes", likes);
+                intent.putExtra("timestampCreated", timestampCreated);
                 startActivity(intent);
             }
         });
@@ -120,6 +165,23 @@ public class DetailActivity extends AppCompatActivity {
                 ButtonYes.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        /*
+                        ClickedPostTimestamp
+                        ClickedPostTimestamp add if statement to get ClickedPostTimestamp from surflistadapter or from surfgridadapter
+                        ClickedPostTimestamp
+                         */
+                        FSdb.deletePost(LoginActivity.userID, surfListAdapter.ClickedPostTimestamp).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if (task.isSuccessful()) {
+                                    Toast.makeText(DetailActivity.this, "Post successfully deleted", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(DetailActivity.this, MainActivity.class);
+                                    startActivity(intent);
+                                } else {
+                                    Log.w("FSdb Post Deletion", task.getException());
+                                }
+                            }
+                        });
                         bottomSheetDialog.dismiss();
                         BottomSheetDialog bottomSheetDialog1 = new BottomSheetDialog(DetailActivity.this);
                         View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_success, null);

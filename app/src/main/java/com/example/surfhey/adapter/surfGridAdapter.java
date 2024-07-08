@@ -2,6 +2,7 @@ package com.example.surfhey.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,9 @@ import com.example.surfhey.DetailActivity;
 import com.example.surfhey.modelItem.modelSurf;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class surfGridAdapter extends RecyclerView.Adapter<surfGridAdapter.ViewHolder> {
     ArrayList<modelSurf> items;
@@ -48,6 +52,20 @@ public class surfGridAdapter extends RecyclerView.Adapter<surfGridAdapter.ViewHo
             // Handle case where posterResourceName is null
             holder.imageGrid.setImageResource(R.drawable.img1); // Set a default image
         }
+
+        // Handle item click to start DetailActivity
+        holder.itemView.setOnClickListener(view -> {
+            Intent intent = new Intent(context, DetailActivity.class);
+            intent.putExtra("authorname", items.get(position).getAuthorname());
+            intent.putExtra("title", items.get(position).getTitle());
+            intent.putExtra("date", items.get(position).getDate());
+            intent.putExtra("dateAgo", getRelativeTime(items.get(position).getDate()));
+            intent.putExtra("image", items.get(position).getImageURL());
+            intent.putExtra("detail", items.get(position).getDetail());
+            intent.putExtra("likes", items.get(position).getLikes());
+            intent.putExtra("timestampCreated", items.get(position).getTimestampcreated());
+            context.startActivity(intent);
+        });
     }
 
     @Override
@@ -61,6 +79,40 @@ public class surfGridAdapter extends RecyclerView.Adapter<surfGridAdapter.ViewHo
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imageGrid = itemView.findViewById(R.id.ivGrid);
+        }
+    }
+
+    public static String getRelativeTime(String dateString) {
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss 'GMT'Z yyyy", Locale.ENGLISH);
+        try {
+            Date date = sdf.parse(dateString);
+            long timeDiff = new Date().getTime() - date.getTime();
+
+            if (timeDiff < TimeUnit.MINUTES.toMillis(1)) {
+                long seconds = TimeUnit.MILLISECONDS.toSeconds(timeDiff);
+                return seconds + (seconds == 1 ? " second ago" : " seconds ago");
+            } else if (timeDiff < TimeUnit.HOURS.toMillis(1)) {
+                long minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+                return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+            } else if (timeDiff < TimeUnit.DAYS.toMillis(1)) {
+                long hours = TimeUnit.MILLISECONDS.toHours(timeDiff);
+                return hours + (hours == 1 ? " hour ago" : " hours ago");
+            } else if (timeDiff < TimeUnit.DAYS.toMillis(7)) {
+                long days = TimeUnit.MILLISECONDS.toDays(timeDiff);
+                return days + (days == 1 ? " day ago" : " days ago");
+            } else if (timeDiff < TimeUnit.DAYS.toMillis(30)) {
+                long weeks = TimeUnit.MILLISECONDS.toDays(timeDiff) / 7;
+                return weeks + (weeks == 1 ? " week ago" : " weeks ago");
+            } else if (timeDiff < TimeUnit.DAYS.toMillis(365)) {
+                long months = TimeUnit.MILLISECONDS.toDays(timeDiff) / 30;
+                return months + (months == 1 ? " month ago" : " months ago");
+            } else {
+                long years = TimeUnit.MILLISECONDS.toDays(timeDiff) / 365;
+                return years + (years == 1 ? " year ago" : " years ago");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Unknown time";
         }
     }
 }

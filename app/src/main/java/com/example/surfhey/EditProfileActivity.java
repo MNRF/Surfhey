@@ -69,6 +69,8 @@ public class EditProfileActivity extends AppCompatActivity {
                                 if (task.isSuccessful()) {
                                     FSdb.updateUsername(LoginActivity.userID, task.getResult()
                                             , userName.getText().toString());
+                                    Toast.makeText(EditProfileActivity.this, "Username successfully updated", Toast.LENGTH_SHORT).show();
+
                                 }else {
                                     Log.w(TAG, "Error updating username"
                                             , task.getException());

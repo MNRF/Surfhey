@@ -37,7 +37,10 @@ public class ProfileFragment extends Fragment {
     private String mParam2;
     private RecyclerView recycleGrid;
     private ArrayList<modelSurf> surfList;
-    private TextView userName; // Define userName here
+    private surfGridAdapter surfGridAdapter;
+    private TextView userName;
+    private TextView userID;
+    private TextView surveyCreated;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -66,7 +69,7 @@ public class ProfileFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
-        userName = view.findViewById(R.id.tvProfile); // Initialize userName here
+        userName = view.findViewById(R.id.tvProfile);
         FSdb = new Firestore();
         FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
                 (new OnCompleteListener<String>() {
@@ -79,8 +82,28 @@ public class ProfileFragment extends Fragment {
                         }
                     }
                 });
+        userID = view.findViewById(R.id.textView15);
+        userID.setText(LoginActivity.userID);
+        surveyCreated = view.findViewById(R.id.textView16);
+        FSdb.getSurveyCreatedbyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
+            @Override
+            public void onComplete(@NonNull Task<String> task) {
+                if (task.isSuccessful()) {
+                    surveyCreated.setText(task.getResult());
+                } else {
+                    Log.e(TAG, "Error retrieving survey count", task.getException());
+                }
+            }
+        });
 
         recycleGrid = view.findViewById(R.id.recycleGrid);
+        recycleGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+
+        // Initialize empty data list and adapter
+        surfList = new ArrayList<>();
+        surfGridAdapter = new surfGridAdapter(surfList, getContext());
+        recycleGrid.setAdapter(surfGridAdapter);
+
         fetchDataAndSetupRecyclerView();
 
         // Find the ImageView and set up the click listener
@@ -101,31 +124,47 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
-                    setupRecyclerView();
+                    updateRecyclerViewData();
                 } else {
-                    Log.e("HomeFragment", "Failed to fetch data from Firestore", task.getException());
+                    Log.e(TAG, "Failed to fetch data from Firestore", task.getException());
                 }
             }
         });
     }
 
-    private void setupRecyclerView() {
-        // Set up the RecyclerView
-        recycleGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        surfList = new ArrayList<>();
-        for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
-            modelSurf modelSurf = new modelSurf(
-                    itemSurf.itemAuthorname[i],
-                    itemSurf.itemTitle[i],
-                    itemSurf.itemDate[i],
-                    itemSurf.itemImageURL[i],
-                    itemSurf.itemDetail[i],
-                    itemSurf.itemLikes[i]
-            );
-            surfList.add(modelSurf);
-        }
-        surfGridAdapter surfGridAdapter = new surfGridAdapter(surfList, getContext());
-        recycleGrid.setAdapter(surfGridAdapter);
+    private void updateRecyclerViewData() {
+        // Simulate a delay to avoid blocking the UI thread
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                surfList.clear();
+                for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
+                    modelSurf modelSurf = new modelSurf(
+                            itemSurf.itemAuthorname[i],
+                            itemSurf.itemTitle[i],
+                            itemSurf.itemDate[i],
+                            itemSurf.itemImageURL[i],
+                            itemSurf.itemDetail[i],
+                            itemSurf.itemLikes[i],
+                            itemSurf.itemtimestampCreated[i]
+                    );
+                    surfList.add(modelSurf);
+                }
+
+                // Update the RecyclerView on the main thread
+                requireActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (surfList.isEmpty()) {
+                            Log.d(TAG, "RecyclerView Data: No data available");
+                        } else {
+                            Log.d(TAG, "RecyclerView Data: " + surfList.size() + " items loaded");
+                        }
+                        surfGridAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

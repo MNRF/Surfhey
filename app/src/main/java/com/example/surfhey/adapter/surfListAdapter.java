@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.surfhey.modelItem.modelSurf;
+import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHolder> {
     private ArrayList<modelSurf> items;
     private Context context;
+    public static Timestamp ClickedPostTimestamp;
 
     public surfListAdapter(ArrayList<modelSurf> items, Context context) {
         this.items = items;
@@ -77,6 +79,7 @@ public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHo
             intent.putExtra("image", items.get(position).getImageURL());
             intent.putExtra("detail", items.get(position).getDetail());
             intent.putExtra("likes", items.get(position).getLikes());
+            ClickedPostTimestamp = items.get(position).getTimestampcreated();
             context.startActivity(intent);
         });
     }

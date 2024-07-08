@@ -14,6 +14,14 @@ import android.widget.ImageView;
 
 public class NewPostActivity extends AppCompatActivity {
     Firestore FSdb;
+    private String judulSurvey;
+    private String date;
+    private String detail;
+    private String imageurl;
+    private String authorname;
+    private String likes;
+    private String dateAgo;
+    private boolean update = false;
     private static final int PICK_IMAGE_REQUEST = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,12 +30,34 @@ public class NewPostActivity extends AppCompatActivity {
 
         FSdb = new Firestore();
 
+        ImageView postImage = findViewById(R.id.imageView3);
+        EditText postDescription = findViewById(R.id.text_area);
+        EditText surveyGoal = findViewById(R.id.editTextNumber);
+        EditText surveyTimeLimit = findViewById(R.id.loginUsername);
+        Button BtnPublish = findViewById(R.id.button5);
+
+        judulSurvey = getIntent().getStringExtra("title");
+        date = getIntent().getStringExtra("date");
+        detail = getIntent().getStringExtra("detail");
+        imageurl = getIntent().getStringExtra("image");
+        authorname = getIntent().getStringExtra("authorname");
+        likes = getIntent().getStringExtra("likes");
+        dateAgo = getIntent().getStringExtra("dateAgo");
+
+        if (!imageurl.isEmpty()) {
+            int drawableResourceId = getResources().getIdentifier(imageurl, "drawable", getPackageName());
+            postImage.setImageResource(drawableResourceId);
+            postDescription.setText(detail);
+
+        }
+
         ImageView backButton = findViewById(R.id.back_btn_newpost);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
                 startActivity(intent);
+                update = true;
             }
         });
         ConstraintLayout addNewPost = findViewById(R.id.constraintNewPost);
@@ -50,17 +80,19 @@ public class NewPostActivity extends AppCompatActivity {
             }
         });
 
-        ImageView postImage = findViewById(R.id.imageView3);
-        EditText postDescription = findViewById(R.id.text_area);
-        EditText surveyGoal = findViewById(R.id.editTextNumber);
-        EditText surveyTimeLimit = findViewById(R.id.loginUsername);
-        Button BtnPublish = findViewById(R.id.button5);
         BtnPublish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FSdb.createPost(LoginActivity.userID, "imageurlhere", CreateSurveyActivity.postTitle, postDescription.getText().toString());
-                Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
-                startActivity(intent);
+                if (!update){
+                    FSdb.createPost(LoginActivity.userID, "img1", CreateSurveyActivity.postTitle, postDescription.getText().toString());
+                    Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
+                    startActivity(intent);
+                }
+                else if (update){
+                    FSdb.updatePost(LoginActivity.userID, "img1", CreateSurveyActivity.postTitle, postDescription.getText().toString(), date);
+                    Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
+                    startActivity(intent);
+                }
             }
         });
     }

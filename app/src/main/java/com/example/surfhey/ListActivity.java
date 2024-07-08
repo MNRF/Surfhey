@@ -41,7 +41,8 @@ public class ListActivity extends AppCompatActivity {
                     itemSurf.itemDate[i],
                     itemSurf.itemImageURL[i],
                     itemSurf.itemDetail[i],
-                    itemSurf.itemLikes[i]
+                    itemSurf.itemLikes[i],
+                    itemSurf.itemtimestampCreated[i]
             );
             items.add(modelSurf);
         }
