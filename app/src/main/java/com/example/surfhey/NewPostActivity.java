@@ -21,6 +21,7 @@ public class NewPostActivity extends AppCompatActivity {
     private String authorname;
     private String likes;
     private String dateAgo;
+    private String postID;
     private boolean update = false;
     private static final int PICK_IMAGE_REQUEST = 1;
     @Override
@@ -43,12 +44,17 @@ public class NewPostActivity extends AppCompatActivity {
         authorname = getIntent().getStringExtra("authorname");
         likes = getIntent().getStringExtra("likes");
         dateAgo = getIntent().getStringExtra("dateAgo");
+        postID = getIntent().getStringExtra("postID");
 
-        if (!imageurl.isEmpty()) {
-            int drawableResourceId = getResources().getIdentifier(imageurl, "drawable", getPackageName());
-            postImage.setImageResource(drawableResourceId);
-            postDescription.setText(detail);
-
+        try {
+            if (!imageurl.isEmpty()) {
+                int drawableResourceId = getResources().getIdentifier(imageurl, "drawable", getPackageName());
+                postImage.setImageResource(drawableResourceId);
+                postDescription.setText(detail);
+                update = true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         ImageView backButton = findViewById(R.id.back_btn_newpost);
@@ -57,7 +63,6 @@ public class NewPostActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
                 startActivity(intent);
-                update = true;
             }
         });
         ConstraintLayout addNewPost = findViewById(R.id.constraintNewPost);
@@ -83,15 +88,18 @@ public class NewPostActivity extends AppCompatActivity {
         BtnPublish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!update){
-                    FSdb.createPost(LoginActivity.userID, "img1", CreateSurveyActivity.postTitle, postDescription.getText().toString());
+                System.out.println(update);
+                if (update){
+                    FSdb.updatePost("img1", judulSurvey, postDescription.getText().toString(), postID);
                     Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
                     startActivity(intent);
-                }
-                else if (update){
-                    FSdb.updatePost(LoginActivity.userID, "img1", CreateSurveyActivity.postTitle, postDescription.getText().toString(), date);
+                    imageurl = "";
+                    finish();
+                } else if (!update){
+                    FSdb.createPost(LoginActivity.userID, "img1", judulSurvey, postDescription.getText().toString());
                     Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
                     startActivity(intent);
+                    finish();
                 }
             }
         });

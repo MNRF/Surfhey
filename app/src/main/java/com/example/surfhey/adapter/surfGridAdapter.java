@@ -63,7 +63,7 @@ public class surfGridAdapter extends RecyclerView.Adapter<surfGridAdapter.ViewHo
             intent.putExtra("image", items.get(position).getImageURL());
             intent.putExtra("detail", items.get(position).getDetail());
             intent.putExtra("likes", items.get(position).getLikes());
-            intent.putExtra("timestampCreated", items.get(position).getTimestampcreated());
+            intent.putExtra("postID", items.get(position).getPostID());
             context.startActivity(intent);
         });
     }

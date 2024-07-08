@@ -39,7 +39,7 @@ public class Firestore {
         Map<String, Object> account = new HashMap<>();
         account.put("username", username);
         account.put("userpassword", userpassword);
-        account.put("userstatus", "active");
+        account.put("status", "active");
         account.put("datecreated", Calendar.getInstance().getTime());
         account.put("datemodified", Calendar.getInstance().getTime());
 
@@ -78,7 +78,7 @@ public class Firestore {
 
     public Task<Boolean> isLogCredValid(String username, String userpassword) {
         return db.collection("logcred").whereEqualTo("username", username)
-                .whereEqualTo("userpassword", userpassword).whereEqualTo("userstatus", "active")
+                .whereEqualTo("userpassword", userpassword).whereEqualTo("status", "active")
                 .get()
                 .continueWith(new Continuation<QuerySnapshot, Boolean>() {
                     @Override
@@ -227,7 +227,7 @@ public class Firestore {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists() && document.getString("username").equals(username)) {
                                 Map<String, Object> updates = new HashMap<>();
-                                updates.put("userstatus", "inactive");
+                                updates.put("status", "inactive");
                                 updates.put("datemodified", Calendar.getInstance().getTime());
                                 return db.collection("logcred").document(userid).update(updates);
                             } else {
@@ -254,17 +254,14 @@ public class Firestore {
         db.collection("post").document().set(post);
     }
 
-    public Task<Void> updatePost(String authorid, String imageurl, String title, String description, String datecreated) {
-        return db.collection("post")
-                .whereEqualTo("datecreated", datecreated)
-                .whereEqualTo("authorid", authorid)
+    public Task<Void> updatePost(String imageurl, String title, String description, String postID) {
+        return db.collection("post").document(postID)
                 .get()
                 .continueWithTask(task -> {
                     if (task.isSuccessful()) {
-                        QuerySnapshot querySnapshot = task.getResult();
-                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                            DocumentSnapshot document = querySnapshot.getDocuments().get(0); // Assuming there's only one document
-                            // Update fields in the found document
+                        DocumentSnapshot documentSnapshot = task.getResult();
+                        if (documentSnapshot != null && documentSnapshot.exists()) {
+
                             Map<String, Object> updates = new HashMap<>();
                             updates.put("imageurl", imageurl);
                             updates.put("title", title);
@@ -272,7 +269,7 @@ public class Firestore {
                             updates.put("datemodified", Calendar.getInstance().getTime());
 
                             // Perform the update operation
-                            return document.getReference().update(updates);
+                            return documentSnapshot.getReference().update(updates);
                         } else {
                             throw new Exception("Document not found or unauthorized access");
                         }
@@ -282,53 +279,29 @@ public class Firestore {
                 });
     }
 
-    public Task<Void> deletePost(String authorid, Timestamp datecreated) {
-        return db.collection("post")
-                .whereEqualTo("authorid", authorid)
-                .limit(1)  // Limit the query to 1 document since you expect only one document to match
+    public Task<Void> deletePost(String postID) {
+        return db.collection("post").document(postID)
                 .get()
                 .continueWithTask(task -> {
                     if (task.isSuccessful()) {
-                        QuerySnapshot querySnapshot = task.getResult();
-                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
-                            Timestamp docTimestamp = document.getTimestamp("datecreated");
+                        DocumentSnapshot documentSnapshot = task.getResult();
+                        if (documentSnapshot != null && documentSnapshot.exists()) {
 
-                            // Compare timestamps considering both seconds and nanoseconds
-                            assert docTimestamp != null;
-                            System.out.println(docTimestamp.getSeconds() + " " + datecreated.getSeconds());
-                            System.out.println(docTimestamp.getNanoseconds() + " " + datecreated.getNanoseconds());
-                            if (docTimestamp.getSeconds() == datecreated.getSeconds() &&
-                                    docTimestamp.getNanoseconds() == datecreated.getNanoseconds()) {
-                                // Update fields in the found document
-                                Map<String, Object> updates = new HashMap<>();
-                                updates.put("poststatus", "inactive");
-                                updates.put("datemodified", Calendar.getInstance().getTime());
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("poststatus", "inactive");
+                            updates.put("datemodified", Calendar.getInstance().getTime());
 
-                                // Perform the update operation
-                                return document.getReference().update(updates);
-                            } else {
-                                // Log the mismatch for debugging
-                                Log.w("Firestore", "Timestamp mismatch. Firestore: " + docTimestamp.toString() +
-                                        ", Provided: " + datecreated.toString());
-                                throw new Exception("Document found but datecreated does not match");
-                            }
+                            // Perform the update operation
+                            return documentSnapshot.getReference().update(updates);
                         } else {
-                            // Print debug information for troubleshooting
-                            if (querySnapshot == null) {
-                                Log.w("Firestore", "Query Snapshot is null");
-                            } else if (querySnapshot.isEmpty()) {
-                                Log.w("Firestore", "Query Snapshot is empty");
-                            } else {
-                                Log.w("Firestore", "Unexpected condition in document retrieval");
-                            }
                             throw new Exception("Document not found or unauthorized access");
                         }
                     } else {
-                        throw task.getException(); // Throw the original exception if the task was not successful
+                        throw task.getException();
                     }
                 });
     }
+
 
     public Task<Void> getPostAndUpdateItems() {
         return db.collection("post").orderBy("datecreated", Query.Direction.DESCENDING)
@@ -344,38 +317,42 @@ public class Firestore {
                             List<String> titles = new ArrayList<>();
                             List<String> details = new ArrayList<>();
                             List<String> likes = new ArrayList<>();
-                            List<Timestamp> timeStampCreateds = new ArrayList<>();
+                            List<String> postID = new ArrayList<>();
 
                             for (DocumentSnapshot ds : qs.getDocuments()) {
-                                if (ds.getString("poststatus").equals("active")) {
-                                    imageURLS.add(ds.getString("imageurl"));
-                                    Timestamp timestamp = ds.getTimestamp("datecreated");
-                                    timeStampCreateds.add(ds.getTimestamp("datecreated"));
-                                    if (timestamp != null) {
-                                        Date date = timestamp.toDate();
-                                        dates.add(date.toString()); // Convert Date to String
-                                    } else {
-                                        dates.add("Unknown date");
-                                    }
-                                    titles.add(ds.getString("title"));
-                                    details.add(ds.getString("description"));
-                                    likes.add(ds.getLong("likes").toString());
+                                try {
+                                    if (ds.getString("poststatus").equals("active")) {
+                                        imageURLS.add(ds.getString("imageurl"));
+                                        Timestamp timestamp = ds.getTimestamp("datecreated");
+                                        if (timestamp != null) {
+                                            Date date = timestamp.toDate();
+                                            dates.add(date.toString()); // Convert Date to String
+                                        } else {
+                                            dates.add("Unknown date");
+                                        }
+                                        titles.add(ds.getString("title"));
+                                        details.add(ds.getString("description"));
+                                        likes.add(ds.getLong("likes").toString());
+                                        postID.add(ds.getId().toString());
 
-                                    // Create a task to fetch the username and add it to the list at the same index
-                                    final int index = authornames.size();
-                                    authornames.add("Loading..."); // Placeholder to maintain index order
-                                    Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
-                                            .addOnCompleteListener(usernameTaskResult -> {
-                                                if (usernameTaskResult.isSuccessful()) {
-                                                    authornames.set(index, usernameTaskResult.getResult());
-                                                } else {
-                                                    authornames.set(index, "Unknown Author");
-                                                    Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
-                                                }
-                                            });
-                                    usernameTasks.add(usernameTask);
-                                }else {
-                                    throw new Exception("No matching document found");
+                                        // Create a task to fetch the username and add it to the list at the same index
+                                        final int index = authornames.size();
+                                        authornames.add("Loading..."); // Placeholder to maintain index order
+                                        Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
+                                                .addOnCompleteListener(usernameTaskResult -> {
+                                                    if (usernameTaskResult.isSuccessful()) {
+                                                        authornames.set(index, usernameTaskResult.getResult());
+                                                    } else {
+                                                        authornames.set(index, "Unknown Author");
+                                                        Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
+                                                    }
+                                                });
+                                        usernameTasks.add(usernameTask);
+                                    }else {
+                                        throw new Exception("No matching document found");
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             }
 
@@ -390,7 +367,7 @@ public class Firestore {
                                                 titles.toArray(new String[0]),
                                                 details.toArray(new String[0]),
                                                 likes.toArray(new String[0]),
-                                                timeStampCreateds.toArray(new Timestamp[0])
+                                                postID.toArray(new String[0])
                                         );
                                         return null;
                                     });
@@ -417,38 +394,42 @@ public class Firestore {
                             List<String> titles = new ArrayList<>();
                             List<String> details = new ArrayList<>();
                             List<String> likes = new ArrayList<>();
-                            List<Timestamp> timeStampCreateds = new ArrayList<>();
+                            List<String> postID = new ArrayList<>();
 
                             for (DocumentSnapshot ds : qs.getDocuments()) {
-                                if (ds.getString("poststatus").equals("active") && ds.getString("authorid").equals(userID)) {
-                                    imageURLS.add(ds.getString("imageurl"));
-                                    Timestamp timestamp = ds.getTimestamp("datecreated");
-                                    timeStampCreateds.add(ds.getTimestamp("datecreated"));
-                                    if (timestamp != null) {
-                                        Date date = timestamp.toDate();
-                                        dates.add(date.toString()); // Convert Date to String
-                                    } else {
-                                        dates.add("Unknown date");
-                                    }
-                                    titles.add(ds.getString("title"));
-                                    details.add(ds.getString("description"));
-                                    likes.add(ds.getLong("likes").toString());
+                                try {
+                                    if (ds.getString("poststatus").equals("active") && ds.getString("authorid").equals(userID)) {
+                                        imageURLS.add(ds.getString("imageurl"));
+                                        Timestamp timestamp = ds.getTimestamp("datecreated");
+                                        if (timestamp != null) {
+                                            Date date = timestamp.toDate();
+                                            dates.add(date.toString()); // Convert Date to String
+                                        } else {
+                                            dates.add("Unknown date");
+                                        }
+                                        titles.add(ds.getString("title"));
+                                        details.add(ds.getString("description"));
+                                        likes.add(ds.getLong("likes").toString());
+                                        postID.add(ds.getId().toString());
 
-                                    // Create a task to fetch the username and add it to the list at the same index
-                                    final int index = authornames.size();
-                                    authornames.add("Loading..."); // Placeholder to maintain index order
-                                    Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
-                                            .addOnCompleteListener(usernameTaskResult -> {
-                                                if (usernameTaskResult.isSuccessful()) {
-                                                    authornames.set(index, usernameTaskResult.getResult());
-                                                } else {
-                                                    authornames.set(index, "Unknown Author");
-                                                    Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
-                                                }
-                                            });
-                                    usernameTasks.add(usernameTask);
-                                }else {
-                                    throw new Exception("No matching document found");
+                                        // Create a task to fetch the username and add it to the list at the same index
+                                        final int index = authornames.size();
+                                        authornames.add("Loading..."); // Placeholder to maintain index order
+                                        Task<String> usernameTask = getUsernamebyUserID(ds.getString("authorid"))
+                                                .addOnCompleteListener(usernameTaskResult -> {
+                                                    if (usernameTaskResult.isSuccessful()) {
+                                                        authornames.set(index, usernameTaskResult.getResult());
+                                                    } else {
+                                                        authornames.set(index, "Unknown Author");
+                                                        Log.w(TAG, "Error Retrieving User Name", usernameTaskResult.getException());
+                                                    }
+                                                });
+                                        usernameTasks.add(usernameTask);
+                                    }else {
+                                        throw new Exception("No matching document found");
+                                    }
+                                } catch (Exception e) {
+
                                 }
                             }
 
@@ -463,7 +444,7 @@ public class Firestore {
                                                 titles.toArray(new String[0]),
                                                 details.toArray(new String[0]),
                                                 likes.toArray(new String[0]),
-                                                timeStampCreateds.toArray(new Timestamp[0])
+                                                postID.toArray(new String[0])
                                         );
                                         return null;
                                     });
@@ -474,5 +455,17 @@ public class Firestore {
                         throw task.getException();
                     }
                 });
+    }
+    public void createSurvey(String authorid, Timestamp dateend, long goal, String postID, String statement) {
+        Map<String, Object> survey = new HashMap<>();
+        survey.put("authorid", authorid);
+        survey.put("dateend", dateend);
+        survey.put("goal", goal);
+        survey.put("postid", postID);
+        survey.put("statement", statement);
+        survey.put("datecreated", Calendar.getInstance().getTime());
+        survey.put("datemodified", Calendar.getInstance().getTime());
+
+        db.collection("post").document().set(survey);
     }
 }

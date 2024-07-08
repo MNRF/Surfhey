@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHolder> {
     private ArrayList<modelSurf> items;
     private Context context;
-    public static Timestamp ClickedPostTimestamp;
 
     public surfListAdapter(ArrayList<modelSurf> items, Context context) {
         this.items = items;
@@ -79,7 +78,7 @@ public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHo
             intent.putExtra("image", items.get(position).getImageURL());
             intent.putExtra("detail", items.get(position).getDetail());
             intent.putExtra("likes", items.get(position).getLikes());
-            ClickedPostTimestamp = items.get(position).getTimestampcreated();
+            intent.putExtra("postID", items.get(position).getPostID());
             context.startActivity(intent);
         });
     }

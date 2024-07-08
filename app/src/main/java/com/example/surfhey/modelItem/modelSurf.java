@@ -5,17 +5,16 @@ import com.google.firebase.Timestamp;
 import java.io.Serializable;
 
 public class modelSurf implements Serializable {
-    private String authorname, imageurl,date,title,detailItem, likes;
-    private Timestamp timestampcreated;
+    private String authorname, imageurl,date,title,detailItem, likes, postID;
 
-    public modelSurf(String authorname, String title, String date, String imageurl, String detail, String likes, Timestamp timestampcreated) {
+    public modelSurf(String authorname, String title, String date, String imageurl, String detail, String likes, String postID) {
         this.authorname = authorname;
         this.title = title;
         this.date = date;
         this.imageurl = imageurl;
         this.detailItem = detail;
         this.likes = likes;
-        this.timestampcreated = timestampcreated;
+        this.postID = postID;
 
     }
     public String getAuthorname() {
@@ -39,7 +38,7 @@ public class modelSurf implements Serializable {
     public String getLikes() {
         return likes;
     }
-    public Timestamp getTimestampcreated() {
-        return timestampcreated;
+    public String getPostID() {
+        return postID;
     }
 }

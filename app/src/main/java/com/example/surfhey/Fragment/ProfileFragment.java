@@ -146,7 +146,7 @@ public class ProfileFragment extends Fragment {
                             itemSurf.itemImageURL[i],
                             itemSurf.itemDetail[i],
                             itemSurf.itemLikes[i],
-                            itemSurf.itemtimestampCreated[i]
+                            itemSurf.itemPostID[i]
                     );
                     surfList.add(modelSurf);
                 }

@@ -15,16 +15,31 @@ import android.widget.TextView;
 import androidx.cardview.widget.CardView;
 
 public class CreateSurveyActivity extends AppCompatActivity {
-
+    private String judulSurvey;
+    private String date;
+    private String detail;
+    private String imageurl;
+    private String authorname;
+    private String likes;
+    private String dateAgo;
+    private String postID;
     private SurveyDatabaseHelper dbHelper;
     private long surveyId;
     private LinearLayout questionListLayout;
-    public static String postTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_survey);
+
+        judulSurvey = getIntent().getStringExtra("title");
+        date = getIntent().getStringExtra("date");
+        detail = getIntent().getStringExtra("detail");
+        imageurl = getIntent().getStringExtra("image");
+        authorname = getIntent().getStringExtra("authorname");
+        likes = getIntent().getStringExtra("likes");
+        dateAgo = getIntent().getStringExtra("dateAgo");
+        postID = getIntent().getStringExtra("postID");
 
         dbHelper = new SurveyDatabaseHelper(this);
         questionListLayout = findViewById(R.id.question_list_layout);
@@ -39,21 +54,27 @@ public class CreateSurveyActivity extends AppCompatActivity {
         addQuestionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 addQuestion();
             }
         });
 
         EditText postTitleField = findViewById(R.id.editText3);
+        try {
+            if (!judulSurvey.isEmpty()) {
+                postTitleField.setText(judulSurvey);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         ImageView backButton = findViewById(R.id.back_btn_createSurvey);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                postTitle = postTitleField.getText().toString();
                 Intent intent = new Intent(CreateSurveyActivity.this, NewPostActivity.class);
                 startActivity(intent);
             }
         });
-
     }
 
     private void loadQuestions() {
@@ -115,7 +136,6 @@ public class CreateSurveyActivity extends AppCompatActivity {
     }
 
     private void saveSurvey() {
-        // Save survey to database
-        // ...
+
     }
 }

@@ -44,7 +44,7 @@ public class DetailActivity extends AppCompatActivity {
     private String authorname;
     private String likes;
     private String dateAgo;
-    private Timestamp timestampCreated;
+    private String postID;
     private Firestore FSdb;
 
     private String[] questionTitles = {
@@ -67,9 +67,7 @@ public class DetailActivity extends AppCompatActivity {
         authorname = getIntent().getStringExtra("authorname");
         likes = getIntent().getStringExtra("likes");
         dateAgo = getIntent().getStringExtra("dateAgo");
-        long milliseconds = getIntent().getLongExtra("timestampCreated", 0);
-        int nanoseconds = getIntent().getIntExtra("timestampCreatedNanoseconds", 0);
-        timestampCreated = new Timestamp(milliseconds / 1000, nanoseconds); // Divide milliseconds by 1000 to get seconds
+        postID = getIntent().getStringExtra("postID");
 
         TextView detailTextView = findViewById(R.id.tvDetail);
         detailTextView.setText(detail);
@@ -139,7 +137,7 @@ public class DetailActivity extends AppCompatActivity {
                 intent.putExtra("image", imageurl);
                 intent.putExtra("detail", detail);
                 intent.putExtra("likes", likes);
-                intent.putExtra("timestampCreated", timestampCreated);
+                intent.putExtra("postID", postID);
                 startActivity(intent);
             }
         });
@@ -168,15 +166,16 @@ public class DetailActivity extends AppCompatActivity {
                         /*
                         ClickedPostTimestamp
                         ClickedPostTimestamp add if statement to get ClickedPostTimestamp from surflistadapter or from surfgridadapter
-                        ClickedPostTimestamp
+                        ClickedPostTimestamp there is still time difference between received and clicked timestamp
                          */
-                        FSdb.deletePost(LoginActivity.userID, surfListAdapter.ClickedPostTimestamp).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        FSdb.deletePost(postID).addOnCompleteListener(new OnCompleteListener<Void>() {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
                                 if (task.isSuccessful()) {
                                     Toast.makeText(DetailActivity.this, "Post successfully deleted", Toast.LENGTH_SHORT).show();
                                     Intent intent = new Intent(DetailActivity.this, MainActivity.class);
                                     startActivity(intent);
+                                    finish();
                                 } else {
                                     Log.w("FSdb Post Deletion", task.getException());
                                 }
