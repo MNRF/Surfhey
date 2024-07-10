@@ -13,11 +13,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.AggregateQuerySnapshot;
 import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firestore.v1.Document;
 
 
 import java.util.ArrayList;
@@ -154,6 +155,116 @@ public class Firestore {
                 });
     }
 
+    public Task<Integer> getSurveyGoalbyPostID(String postID) {
+        return db.collection("survey").whereEqualTo("postid", postID)
+                .get()
+                .continueWith(new Continuation<QuerySnapshot, Integer>() {
+                    @Override
+                    public Integer then(@NonNull Task<QuerySnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot querySnapshot = task.getResult();
+                            if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                                // Assuming there's only one document matching the query
+                                DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                                // Check if the document exists
+                                if (document.exists()) {
+                                    // Retrieve the 'goal' field and cast it to Integer
+                                    return document.getLong("goal").intValue();
+                                } else {
+                                    throw new Exception("No matching document found");
+                                }
+                            } else {
+                                throw new Exception("No documents found for query");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<Timestamp> getDateEndbyPostID(String postID) {
+        return db.collection("survey").whereEqualTo("postid", postID)
+                .get()
+                .continueWith(new Continuation<QuerySnapshot, Timestamp>() {
+                    @Override
+                    public Timestamp then(@NonNull Task<QuerySnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot querySnapshot = task.getResult();
+                            if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                                // Assuming there's only one document matching the query
+                                DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                                // Check if the document exists
+                                if (document.exists()) {
+                                    return document.getTimestamp("dateend");
+                                } else {
+                                    throw new Exception("No matching document found");
+                                }
+                            } else {
+                                throw new Exception("No documents found for query");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
+    public Task<Integer> getCurrentSurveyTotalbyPostID(String postID) {
+        return db.collection("survey").whereEqualTo("postid", postID)
+                .get()
+                .continueWithTask(new Continuation<QuerySnapshot, Task<QuerySnapshot>>() {
+                    @Override
+                    public Task<QuerySnapshot> then(@NonNull Task<QuerySnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot querySnapshot = task.getResult();
+                            if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                                // Assuming there's only one document matching the query
+                                DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                                // Check if the document exists
+                                if (document.exists()) {
+                                    // Retrieve the 'answer' subcollection within this document
+                                    return document.getReference().collection("answer").get();
+                                } else {
+                                    throw new Exception("No matching document found");
+                                }
+                            } else {
+                                throw new Exception("No documents found for query");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                }).continueWith(new Continuation<QuerySnapshot, Integer>() {
+                    @Override
+                    public Integer then(@NonNull Task<QuerySnapshot> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot querySnapshot = task.getResult();
+                            if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                                // Assuming there's only one document in the 'answer' subcollection
+                                DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                                // Check if the document exists
+                                if (document.exists()) {
+                                    // Check if the 'total' field exists and is not null
+                                    if (document.contains("total") && document.getLong("total") != null) {
+                                        // Retrieve the 'total' field and cast it to Integer
+                                        return document.getLong("total").intValue();
+                                    } else {
+                                        throw new Exception("Total field is missing or null");
+                                    }
+                                } else {
+                                    throw new Exception("No matching document found in answer subcollection");
+                                }
+                            } else {
+                                throw new Exception("No documents found in answer subcollection");
+                            }
+                        } else {
+                            throw task.getException();
+                        }
+                    }
+                });
+    }
+
     public Task<String> getSurveyCreatedbyUserID(String userID) {
         return db.collection("survey").whereEqualTo("authorid", userID)
                 .count()
@@ -240,7 +351,7 @@ public class Firestore {
                 });
     }
 
-    public void createPost(String authorid, String imageurl, String title, String description) {
+    public Task<String> createPost(String authorid, String imageurl, String title, String description) {
         Map<String, Object> post = new HashMap<>();
         post.put("authorid", authorid);
         post.put("imageurl", imageurl);
@@ -251,7 +362,19 @@ public class Firestore {
         post.put("datecreated", Calendar.getInstance().getTime());
         post.put("datemodified", Calendar.getInstance().getTime());
 
-        db.collection("post").document().set(post);
+        // Create a new document with a generated ID
+        return db.collection("post")
+                .add(post)
+                .continueWith(new Continuation<DocumentReference, String>() {
+                    @Override
+                    public String then(@NonNull Task<DocumentReference> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            return task.getResult().getId(); // Return the document ID
+                        } else {
+                            throw task.getException(); // Propagate the error
+                        }
+                    }
+                });
     }
 
     public Task<Void> updatePost(String imageurl, String title, String description, String postID) {
@@ -456,7 +579,8 @@ public class Firestore {
                     }
                 });
     }
-    public void createSurvey(String authorid, Timestamp dateend, long goal, String postID, String statement) {
+
+    public void createSurvey(String authorid, Timestamp dateend, long goal, String postID, String statement, List<String> choices) {
         Map<String, Object> survey = new HashMap<>();
         survey.put("authorid", authorid);
         survey.put("dateend", dateend);
@@ -466,6 +590,42 @@ public class Firestore {
         survey.put("datecreated", Calendar.getInstance().getTime());
         survey.put("datemodified", Calendar.getInstance().getTime());
 
-        db.collection("post").document().set(survey);
+        DocumentReference surveyRef = db.collection("survey").document();
+        surveyRef.set(survey);
+
+        // Add choices to Firestore under the same question document
+        for (String choice : choices) {
+            Map<String, Object> choiceMap = new HashMap<>();
+            choiceMap.put("total", 0);
+            surveyRef.collection("answer").document(choice).set(choiceMap);
+        }
+    }
+
+    public void updateSurvey(String authorid, Timestamp dateend, long goal, String surveyID, String statement, List<String> choices) {
+        DocumentReference surveyRef = db.collection("survey").document(surveyID);
+
+        // Update survey fields
+        surveyRef.update("authorid", authorid,
+                "dateend", dateend,
+                "goal", goal,
+                "statement", statement,
+                "datemodified", Calendar.getInstance().getTime());
+
+        // Delete existing choices and add updated choices
+        surveyRef.collection("answer").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        document.getReference().delete();
+                    }
+
+                    for (String choice : choices) {
+                        Map<String, Object> choiceMap = new HashMap<>();
+                        surveyRef.collection("answer").document(choice).set(choiceMap);
+                    }
+                }
+            }
+        });
     }
 }

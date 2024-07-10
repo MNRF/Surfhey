@@ -12,48 +12,45 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.surfhey.adapter.surfListAdapter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.Timestamp;
 
+import java.sql.Time;
 import java.util.Date;
 import java.util.Locale;
 
 public class DetailActivity extends AppCompatActivity {
     private ProgressBar progressBar;
-    private TextView questionText,questionTitle,questionNumber;
+    private TextView questionText, questionTitle, questionNumber;
     private RadioGroup radioGroup;
     private ImageView ivMore;
-    private Button nextButton;
-    private Button backButton;
-    private Button buttonEditSurvey,buttonDeleteSurvey;
+    private Button nextButton, backButton, buttonEditSurvey, buttonDeleteSurvey;
     private int progressStatus = 20; // initial progress, change as needed
     private int currentQuestion = 0;
-    private String judulSurvey;
-    private String date;
-    private String detail;
-    private String imageurl;
-    private String authorname;
-    private String likes;
-    private String dateAgo;
-    private String postID;
+    private String judulSurvey, date, detail, imageUrl, authorname, likes, dateAgo, postID;
     private Firestore FSdb;
+    private TextView tvSurveyGoal;
 
     private String[] questionTitles = {
             "Mengenal Cara Kamu Manage Waktu!",
             "Apakah kamu sering kesusahan dalam mengerjakan kegiatan antara satu dengan yang lainnya?",
-            "Bagaimana kamu mengatur prioritas tugas-tugas harian?",
+            "Bagaimana kamu mengatur prioritas tugas- tugas harian?",
             "Apakah kamu merasa waktu yang kamu miliki cukup untuk menyelesaikan semua tugas?",
             "Seberapa sering kamu membuat jadwal atau to-do list?"
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,16 +60,61 @@ public class DetailActivity extends AppCompatActivity {
         judulSurvey = getIntent().getStringExtra("title");
         date = getIntent().getStringExtra("date");
         detail = getIntent().getStringExtra("detail");
-        imageurl = getIntent().getStringExtra("image");
+        imageUrl = getIntent().getStringExtra("image");
         authorname = getIntent().getStringExtra("authorname");
         likes = getIntent().getStringExtra("likes");
         dateAgo = getIntent().getStringExtra("dateAgo");
         postID = getIntent().getStringExtra("postID");
 
+        tvSurveyGoal = findViewById(R.id.textView22);
+
+        FSdb.getSurveyGoalbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Integer>() {
+            @Override
+            public void onComplete(@NonNull Task<Integer> task) {
+                if (task.isSuccessful()) {
+                    int goal = task.getResult();
+
+                    // Fetch current sample
+                    FSdb.getCurrentSurveyTotalbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Integer>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Integer> task) {
+                            if (task.isSuccessful()) {
+                                int currentSample = task.getResult();
+                                // Update UI
+                                tvSurveyGoal.setText(currentSample + "/" + goal);
+                            } else {
+                                Log.w("Firestore", "Error fetching current sample: ", task.getException());
+                            }
+                        }
+                    });
+
+                } else {
+                    Log.w("Firestore", "Error fetching goal: ", task.getException());
+                }
+            }
+        });
+
         TextView detailTextView = findViewById(R.id.tvDetail);
         detailTextView.setText(detail);
+
         TextView dateTextView = findViewById(R.id.tvDate);
-        dateTextView.setText(date);
+        FSdb.getDateEndbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Timestamp>() {
+            @Override
+            public void onComplete(@NonNull Task<Timestamp> task) {
+                if (task.isSuccessful()) {
+                    Timestamp dateEndTS = task.getResult();
+                    if (dateEndTS != null) {
+                        String dateEndString = dateEndTS.toDate().toString();
+                        dateTextView.setText("Until: " + dateEndString);
+                    } else {
+                        Log.w("Firestore", "dateEndTS is null");
+                    }
+                } else {
+                    Log.w("Firestore", "Error fetching dateEnd: ", task.getException());
+                }
+            }
+        });
+
         TextView authorName = findViewById(R.id.textView4);
         authorName.setText(authorname);
         TextView like = findViewById(R.id.textView10);
@@ -80,10 +122,18 @@ public class DetailActivity extends AppCompatActivity {
         TextView dateago = findViewById(R.id.textView5);
         dateago.setText(dateAgo);
 
-
         ImageView posterImageView = findViewById(R.id.ivPosterD);
-        int drawableResourceId = getResources().getIdentifier(imageurl, "drawable", getPackageName());
-        posterImageView.setImageResource(drawableResourceId);
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.img1) // Placeholder image while loading
+                    .error(R.drawable.img1) // Error image if the URL fails to load
+                    .into(posterImageView);
+        } else {
+            Log.e("surfListAdapter", "Null or empty image URL");
+            posterImageView.setImageResource(R.drawable.img1); // Fallback to local image if URL is null or empty
+        }
 
         ImageView btnBack = findViewById(R.id.back_btn);
         btnBack.setOnClickListener(v -> {
@@ -105,7 +155,7 @@ public class DetailActivity extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     if (!task.getResult().equals(authorname)) {
                         ivMore.setVisibility(View.GONE);
-                    }else {
+                    } else {
                         ivMore.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -134,7 +184,7 @@ public class DetailActivity extends AppCompatActivity {
                 intent.putExtra("title", judulSurvey);
                 intent.putExtra("date", date);
                 intent.putExtra("dateAgo", dateAgo);
-                intent.putExtra("image", imageurl);
+                intent.putExtra("image", imageUrl);
                 intent.putExtra("detail", detail);
                 intent.putExtra("likes", likes);
                 intent.putExtra("postID", postID);
@@ -148,26 +198,21 @@ public class DetailActivity extends AppCompatActivity {
             public void onClick(View v) {
                 bottomSheetDialog.dismiss();
 
-                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(DetailActivity.this);
-                View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_delete, null);
-                bottomSheetDialog.setContentView(view1);
-                bottomSheetDialog.show();
-                Button ButtonNo = view1.findViewById(R.id.btn_cancel_delete_post);
+                BottomSheetDialog bottomSheetDialog1 = new BottomSheetDialog(DetailActivity.this);
+                View view2 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_delete, null);
+                bottomSheetDialog1.setContentView(view2);
+                bottomSheetDialog1.show();
+                Button ButtonNo = view2.findViewById(R.id.btn_cancel_delete_post);
                 ButtonNo.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        bottomSheetDialog.dismiss();
+                        bottomSheetDialog1.dismiss();
                     }
                 });
-                Button ButtonYes = view1.findViewById(R.id.btn_yes_delete_post);
+                Button ButtonYes = view2.findViewById(R.id.btn_yes_delete_post);
                 ButtonYes.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        /*
-                        ClickedPostTimestamp
-                        ClickedPostTimestamp add if statement to get ClickedPostTimestamp from surflistadapter or from surfgridadapter
-                        ClickedPostTimestamp there is still time difference between received and clicked timestamp
-                         */
                         FSdb.deletePost(postID).addOnCompleteListener(new OnCompleteListener<Void>() {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
@@ -181,11 +226,11 @@ public class DetailActivity extends AppCompatActivity {
                                 }
                             }
                         });
-                        bottomSheetDialog.dismiss();
-                        BottomSheetDialog bottomSheetDialog1 = new BottomSheetDialog(DetailActivity.this);
-                        View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_success, null);
-                        bottomSheetDialog1.setContentView(view1);
-                        bottomSheetDialog1.show();
+                        bottomSheetDialog1.dismiss();
+                        BottomSheetDialog bottomSheetDialog2 = new BottomSheetDialog(DetailActivity.this);
+                        View view3 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_success, null);
+                        bottomSheetDialog2.setContentView(view3);
+                        bottomSheetDialog2.show();
                     }
                 });
             }
@@ -193,20 +238,22 @@ public class DetailActivity extends AppCompatActivity {
         bottomSheetDialog.setContentView(view1);
         bottomSheetDialog.show();
     }
+
     public void openWebsite(View view) {
         String url = "https://surfhey.mnrf.site"; // Replace with the desired URL
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         startActivity(intent);
     }
+
     private void showBottomSheetDialog() {
 
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(DetailActivity.this);
         View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_question, null);
         bottomSheetDialog.setContentView(view1);
-        questionTitle= view1.findViewById(R.id.tvQuestionTitle);
+        questionTitle = view1.findViewById(R.id.tvQuestionTitle);
         questionTitle.setText(judulSurvey);
-        progressBar =view1.findViewById(R.id.progressBar);
+        progressBar = view1.findViewById(R.id.progressBar);
         questionNumber = view1.findViewById(R.id.tvQuestionNumber);
         questionText = view1.findViewById(R.id.tvQuestion);
         radioGroup = view1.findViewById(R.id.radioGroup);
@@ -224,12 +271,13 @@ public class DetailActivity extends AppCompatActivity {
 
                     progressBar.setProgress(progressStatus);
                     updateQuestion();
-                }else{
+                } else {
                     bottomSheetDialog.dismiss();
                     showBottomSheetThank();
                 }
             }
         });
+
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -238,7 +286,7 @@ public class DetailActivity extends AppCompatActivity {
                     progressStatus -= 20;
                     progressBar.setProgress(progressStatus);
                     updateQuestion();
-                }else {
+                } else {
                     bottomSheetDialog.dismiss();
                 }
             }
@@ -254,9 +302,7 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void updateQuestion() {
-        questionNumber.setText("Question"+(currentQuestion+1));
+        questionNumber.setText("Question" + (currentQuestion + 1));
         questionText.setText(questionTitles[currentQuestion]);
     }
-
-
 }

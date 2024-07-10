@@ -6,6 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SurveyDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "survey.db";
@@ -96,5 +99,110 @@ public class SurveyDatabaseHelper extends SQLiteOpenHelper {
         // Insert the new row
         db.insert("account", null, contentValues);
         db.close();
+    }
+
+    public List<Question> getStatementsAndChoices() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT q.id as question_id, q.question, q.survey_id, c.id as choice_id, c.choice " +
+                "FROM questions q " +
+                "LEFT JOIN choices c ON q.id = c.question_id";
+        Cursor cursor = db.rawQuery(query, null);
+
+        List<Question> result = new ArrayList<>();
+        if (cursor != null) {
+            int questionIdIndex = cursor.getColumnIndex("question_id");
+            int questionIndex = cursor.getColumnIndex("question");
+            int surveyIdIndex = cursor.getColumnIndex("survey_id");
+            int choiceIdIndex = cursor.getColumnIndex("choice_id");
+            int choiceIndex = cursor.getColumnIndex("choice");
+
+            while (cursor.moveToNext()) {
+                if (questionIdIndex == -1 || questionIndex == -1 || surveyIdIndex == -1 || choiceIdIndex == -1 || choiceIndex == -1) {
+                    continue;  // Skip this iteration if any column is missing
+                }
+
+                int questionId = cursor.getInt(questionIdIndex);
+                String question = cursor.getString(questionIndex);
+                String surveyId = cursor.getString(surveyIdIndex);
+                int choiceId = cursor.getInt(choiceIdIndex);
+                String choice = cursor.getString(choiceIndex);
+
+                Question questionObj = findQuestionById(result, questionId);
+                if (questionObj == null) {
+                    questionObj = new Question(questionId, question);
+                    questionObj.setSurveyID(surveyId); // Set survey ID for the question
+                    result.add(questionObj);
+                }
+                questionObj.addChoice(new Choice(choiceId, choice));
+            }
+            cursor.close();
+        }
+        db.close();
+
+        return result;
+    }
+
+    private Question findQuestionById(List<Question> questions, int questionId) {
+        for (Question question : questions) {
+            if (question.getId() == questionId) {
+                return question;
+            }
+        }
+        return null;
+    }
+
+    public static class Question {
+        private int id;
+        private String question;
+        private String surveyID; // Survey ID associated with the question
+        private List<Choice> choices;
+
+        public Question(int id, String question) {
+            this.id = id;
+            this.question = question;
+            this.choices = new ArrayList<>();
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getQuestion() {
+            return question;
+        }
+
+        public String getSurveyID() {
+            return surveyID;
+        }
+
+        public void setSurveyID(String surveyID) {
+            this.surveyID = surveyID;
+        }
+
+        public List<Choice> getChoices() {
+            return choices;
+        }
+
+        public void addChoice(Choice choice) {
+            choices.add(choice);
+        }
+    }
+
+    public static class Choice {
+        private int id;
+        private String choice;
+
+        public Choice(int id, String choice) {
+            this.id = id;
+            this.choice = choice;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getChoice() {
+            return choice;
+        }
     }
 }

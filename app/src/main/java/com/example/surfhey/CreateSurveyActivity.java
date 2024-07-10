@@ -24,8 +24,10 @@ public class CreateSurveyActivity extends AppCompatActivity {
     private String dateAgo;
     private String postID;
     private SurveyDatabaseHelper dbHelper;
+    private EditText postTitleField;
     private long surveyId;
     private LinearLayout questionListLayout;
+    public static String title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,10 +61,10 @@ public class CreateSurveyActivity extends AppCompatActivity {
             }
         });
 
-        EditText postTitleField = findViewById(R.id.editText3);
+        postTitleField = findViewById(R.id.editText3);
         try {
-            if (!judulSurvey.isEmpty()) {
-                postTitleField.setText(judulSurvey);
+            if (!title.isEmpty()) {
+                postTitleField.setText(title);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,6 +73,11 @@ public class CreateSurveyActivity extends AppCompatActivity {
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    title = postTitleField.getText().toString();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 Intent intent = new Intent(CreateSurveyActivity.this, NewPostActivity.class);
                 startActivity(intent);
             }
@@ -125,6 +132,11 @@ public class CreateSurveyActivity extends AppCompatActivity {
         questionCardView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    title = postTitleField.getText().toString();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 Intent intent = new Intent(CreateSurveyActivity.this, QuestionActivity.class);
                 intent.putExtra("surveyId", surveyId);
                 intent.putExtra("questionId", questionId); // Pass questionId

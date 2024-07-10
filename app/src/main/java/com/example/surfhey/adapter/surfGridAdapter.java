@@ -8,6 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.surfhey.NewPostActivity;
 import com.example.surfhey.R;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -64,6 +66,7 @@ public class surfGridAdapter extends RecyclerView.Adapter<surfGridAdapter.ViewHo
             intent.putExtra("detail", items.get(position).getDetail());
             intent.putExtra("likes", items.get(position).getLikes());
             intent.putExtra("postID", items.get(position).getPostID());
+            NewPostActivity.update = true;
             context.startActivity(intent);
         });
     }

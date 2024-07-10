@@ -11,8 +11,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.surfhey.DetailActivity;
 import com.example.surfhey.Firestore;
+import com.example.surfhey.NewPostActivity;
 import com.example.surfhey.R;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -51,22 +53,19 @@ public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHo
         holder.tvLikes.setText(items.get(position).getLikes());
 
         // Retrieve poster resource identifier if posterResourceName is not null
-        String posterResourceName = items.get(position).getImageURL();
-        if (posterResourceName != null) {
-            int drawableResourceId = context.getResources().getIdentifier(posterResourceName, "drawable", context.getPackageName());
-            // Check if drawableResourceId is valid (not 0)
-            if (drawableResourceId != 0) {
-                holder.ivPoster.setImageResource(drawableResourceId);
-            } else {
-                Log.e("surfListAdapter", "Drawable resource not found: " + posterResourceName);
-                // Optionally set a default image or placeholder
-                holder.ivPoster.setImageResource(R.drawable.img1);
-            }
+        String imageUrl = items.get(position).getImageURL(); // Replace with your actual method to get the URL
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.img1) // Placeholder image while loading
+                    .error(R.drawable.img1) // Error image if the URL fails to load
+                    .into(holder.ivPoster);
         } else {
-            Log.e("surfListAdapter", "Null poster resource name at position: " + position);
-            // Optionally handle case where posterResourceName is null
-            holder.ivPoster.setImageResource(R.drawable.img1);
+            Log.e("surfListAdapter", "Null or empty image URL at position: " + position);
+            holder.ivPoster.setImageResource(R.drawable.img1); // Fallback to local image if URL is null or empty
         }
+
 
         // Handle item click to start DetailActivity
         holder.itemView.setOnClickListener(view -> {
@@ -79,6 +78,7 @@ public class surfListAdapter extends RecyclerView.Adapter<surfListAdapter.ViewHo
             intent.putExtra("detail", items.get(position).getDetail());
             intent.putExtra("likes", items.get(position).getLikes());
             intent.putExtra("postID", items.get(position).getPostID());
+            NewPostActivity.update = true;
             context.startActivity(intent);
         });
     }
