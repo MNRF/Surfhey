@@ -18,8 +18,8 @@ import java.util.UUID;
 
 public class CloudStorage {
     private static final String TAG = "CloudStorage";
-    private static final String BUCKET_NAME = "test27052024bucket"; // replace with your bucket name
-    private static final String CREDENTIALS_FILE_PATH = "test27052024-4ad8bc062cc4.json"; // replace with the path to your credentials file
+    private static final String BUCKET_NAME = "test27052024bucket";
+    private static final String CREDENTIALS_FILE_PATH = "test27052024-4ad8bc062cc4.json";
 
     private Storage storage;
     private Context context;

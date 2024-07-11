@@ -3,9 +3,7 @@ package com.example.surfhey;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.widget.AppCompatButton;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,8 +23,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
-    private static final String TAG = "Firestore";
-    private Firestore FSdb;
+    private static final String TAG = "FirestoreService";
+    private FirestoreService FSdb;
     public static String userID;
     private SurveyDatabaseHelper dbHelper;
 
@@ -40,17 +38,19 @@ public class LoginActivity extends AppCompatActivity {
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
-        FSdb = new Firestore();
+        FSdb = new FirestoreService();
         dbHelper = new SurveyDatabaseHelper(this);
 
         // Check if a session exists
         userID = dbHelper.getUserId();
-        if (!Objects.equals(userID, "")) {
-            // If a session exists, navigate to MainActivity
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(intent);
-            finish(); // Finish LoginActivity
-            Toast.makeText(LoginActivity.this, "Login Credential is not Valid", Toast.LENGTH_SHORT);
+        if (!(userID == null)){
+            if (!userID.isEmpty()) {
+                // If a session exists, navigate to MainActivity
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish(); // Finish LoginActivity
+                Toast.makeText(LoginActivity.this, "Login Credential is not Valid", Toast.LENGTH_SHORT);
+            }
         }
 
         TextView signUpButton = findViewById(R.id.goSignUp);

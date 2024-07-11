@@ -3,7 +3,6 @@ package com.example.surfhey;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatButton;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.DatePickerDialog;
@@ -27,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NewPostActivity extends AppCompatActivity {
-    Firestore FSdb;
+    FirestoreService FSdb;
     SurveyDatabaseHelper SQdb;
     CloudStorage cloudStorage;
     private String judulSurvey;
@@ -53,7 +52,7 @@ public class NewPostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_post);
 
-        FSdb = new Firestore();
+        FSdb = new FirestoreService();
         SQdb = new SurveyDatabaseHelper(this);
         cloudStorage = new CloudStorage(this);
 
@@ -253,7 +252,7 @@ public class NewPostActivity extends AppCompatActivity {
                                 update = false;
                                 finish();
                             } else {
-                                Log.w("Firestore", "Error creating post", task.getException());
+                                Log.w("FirestoreService", "Error creating post", task.getException());
                             }
                         }
                     });

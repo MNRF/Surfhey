@@ -1,6 +1,6 @@
 package com.example.surfhey.modelItem;
 
-import com.google.firebase.Timestamp;
+import com.google.cloud.Timestamp;
 
 import java.io.Serializable;
 

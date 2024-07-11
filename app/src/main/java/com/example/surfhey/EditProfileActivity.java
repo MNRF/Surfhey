@@ -24,8 +24,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.Objects;
 
 public class EditProfileActivity extends AppCompatActivity {
-    private static final String TAG = "Firestore";
-    private Firestore FSdb;
+    private static final String TAG = "FirestoreService";
+    private FirestoreService FSdb;
     private static final int PICK_IMAGE_REQUEST = 1;
     SurveyDatabaseHelper db;
 
@@ -34,7 +34,7 @@ public class EditProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editprofile);
 
-        FSdb = new Firestore();
+        FSdb = new FirestoreService();
         db = new SurveyDatabaseHelper(this);
 
         ImageView imageView = findViewById(R.id.back_btn_editProfile);

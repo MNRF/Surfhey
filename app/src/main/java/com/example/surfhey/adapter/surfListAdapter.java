@@ -2,7 +2,6 @@ package com.example.surfhey.adapter;
 
 import android.content.Context;
 import android.content.Intent;
-import android.icu.text.DateFormat;
 import android.icu.text.SimpleDateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,14 +12,12 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.surfhey.DetailActivity;
-import com.example.surfhey.Firestore;
 import com.example.surfhey.NewPostActivity;
 import com.example.surfhey.R;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.surfhey.modelItem.modelSurf;
-import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
 import java.util.Date;

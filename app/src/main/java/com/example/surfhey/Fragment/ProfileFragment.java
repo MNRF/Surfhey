@@ -14,7 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.surfhey.Firestore;
+import com.example.surfhey.FirestoreService;
 import com.example.surfhey.LoginActivity;
 import com.example.surfhey.OptionActivity;
 import com.example.surfhey.R;
@@ -27,8 +27,8 @@ import com.google.android.gms.tasks.Task;
 import java.util.ArrayList;
 
 public class ProfileFragment extends Fragment {
-    private static final String TAG = "Firestore";
-    private Firestore FSdb;
+    private static final String TAG = "FirestoreService";
+    private FirestoreService FSdb;
 
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
@@ -70,7 +70,7 @@ public class ProfileFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
         userName = view.findViewById(R.id.tvProfile);
-        FSdb = new Firestore();
+        FSdb = new FirestoreService();
         FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
                 (new OnCompleteListener<String>() {
                     @Override
@@ -126,7 +126,7 @@ public class ProfileFragment extends Fragment {
                 if (task.isSuccessful()) {
                     updateRecyclerViewData();
                 } else {
-                    Log.e(TAG, "Failed to fetch data from Firestore", task.getException());
+                    Log.e(TAG, "Failed to fetch data from FirestoreService", task.getException());
                 }
             }
         });

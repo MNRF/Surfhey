@@ -1,6 +1,5 @@
 package com.example.surfhey;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
@@ -11,12 +10,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import java.util.concurrent.ExecutionException;
 
 public class RegisterActivity extends AppCompatActivity {
-    private static final String TAG = "Firestore";
-    private Firestore FSdb;
+    private static final String TAG = "FirestoreService";
+    private FirestoreService FSdb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,55 +29,36 @@ public class RegisterActivity extends AppCompatActivity {
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(RegisterActivity.this,
-                        LoginActivity.class);
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                 startActivity(intent);
             }
         });
 
         AppCompatButton signupButton = findViewById(R.id.button5);
         signupButton.setOnClickListener(view -> {
-            FSdb = new Firestore();
+            FSdb = new FirestoreService();
 
             String username = usernameEditText.getText().toString();
             String userID = userIDEditText.getText().toString();
             String password = userpasswordEditText.getText().toString();
 
-            FSdb.isUsernameExist(username).addOnCompleteListener
-                    (new OnCompleteListener<Boolean>() {
-                @Override
-                public void onComplete(@NonNull Task<Boolean> task) {
-                    if (task.isSuccessful()) {
-                        boolean usernameExists = task.getResult();
-                        if (!usernameExists) {
-                            FSdb.isUserIDExist(userID).addOnCompleteListener
-                                    (new OnCompleteListener<Boolean>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Boolean> task) {
-                                    if (task.isSuccessful()) {
-                                        boolean userIDExists = task.getResult();
-                                        if (!userIDExists) {
-                                            FSdb.createAccount(username, userID,
-                                                    password);
-                                            Intent intent = new Intent
-                                                    (RegisterActivity
-                                                            .this, MainActivity
-                                                            .class);
-                                            startActivity(intent);
-                                        }
-                                    } else {
-                                        Log.w(TAG, "Error checking if userID exists"
-                                                , task.getException());
-                                    }
-                                }
-                            });
-                        }
+            try {
+                boolean usernameExists = FSdb.isUsernameExist(username);
+                if (!usernameExists) {
+                    boolean userIDExists = FSdb.isUserIDExist(userID);
+                    if (!userIDExists) {
+                        FSdb.createAccount(username, userID, password);
+                        Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                        startActivity(intent);
                     } else {
-                        Log.w(TAG, "Error checking if username exists"
-                                , task.getException());
+                        Log.w(TAG, "User ID already exists");
                     }
+                } else {
+                    Log.w(TAG, "Username already exists");
                 }
-            });
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error checking if username or userID exists", e);
+            }
         });
     }
 }

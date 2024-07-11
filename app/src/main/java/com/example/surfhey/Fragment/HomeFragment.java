@@ -14,7 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import com.example.surfhey.Firestore;
+import com.example.surfhey.FirestoreService;
 import com.example.surfhey.R;
 import com.example.surfhey.adapter.surfListAdapter;
 import com.example.surfhey.modelItem.itemSurf;
@@ -34,7 +34,7 @@ public class HomeFragment extends Fragment {
     private ArrayList<modelSurf> items;
     private String mParam1;
     private String mParam2;
-    Firestore FSdb;
+    FirestoreService FSdb;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -52,7 +52,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FSdb = new Firestore();
+        FSdb = new FirestoreService();
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -71,7 +71,7 @@ public class HomeFragment extends Fragment {
         View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_category, null);
         bottomSheetDialog.setContentView(bottomSheetView);
 
-        // Fetch Firestore data and then setup RecyclerView
+        // Fetch FirestoreService data and then setup RecyclerView
         fetchDataAndSetupRecyclerView();
 
         return view;
@@ -84,7 +84,7 @@ public class HomeFragment extends Fragment {
                 if (task.isSuccessful()) {
                     setupRecyclerView();
                 } else {
-                    Log.e("HomeFragment", "Failed to fetch data from Firestore", task.getException());
+                    Log.e("HomeFragment", "Failed to fetch data from FirestoreService", task.getException());
                 }
             }
         });
