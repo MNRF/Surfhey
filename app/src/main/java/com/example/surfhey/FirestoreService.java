@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.example.surfhey.modelItem.itemSurf;
 import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.AggregateQuerySnapshot;
 import com.google.cloud.firestore.CollectionReference;
@@ -16,6 +17,7 @@ import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteBatch;
+import com.google.cloud.firestore.WriteResult;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayList;
@@ -150,7 +152,7 @@ public class FirestoreService {
         ApiFuture<QuerySnapshot> future = db.collection("survey").whereEqualTo("postid", postID).get();
         QuerySnapshot querySnapshot = future.get();
         if (!querySnapshot.isEmpty()) {
-            List<DocumentSnapshot> documents = querySnapshot.getDocuments();
+            List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
             String[][] result = new String[documents.size()][];
             List<ApiFuture<QuerySnapshot>> answerFutures = new ArrayList<>();
 
@@ -204,7 +206,7 @@ public class FirestoreService {
             DocumentReference userRef = answerRef.collection("responses").document(userID);
             batch.set(userRef, new HashMap<String, Object>());
 
-            ApiFuture<Void> commitFuture = batch.commit();
+            ApiFuture<List<WriteResult>> commitFuture = batch.commit();
             commitFuture.get();
         } else {
             throw new RuntimeException("No documents found for query");
@@ -225,7 +227,7 @@ public class FirestoreService {
             Map<String, Object> updates = new HashMap<>();
             updates.put("username", newUsername);
             updates.put("datemodified", Calendar.getInstance().getTime());
-            ApiFuture<Void> updateFuture = db.collection("logcred").document(userid).update(updates);
+            ApiFuture<WriteResult> updateFuture = db.collection("logcred").document(userid).update(updates);
             updateFuture.get();
         } else {
             throw new RuntimeException("Invalid password");
@@ -239,7 +241,7 @@ public class FirestoreService {
             Map<String, Object> updates = new HashMap<>();
             updates.put("userpassword", newPassword);
             updates.put("datemodified", Calendar.getInstance().getTime());
-            ApiFuture<Void> updateFuture = db.collection("logcred").document(userid).update(updates);
+            ApiFuture<WriteResult> updateFuture = db.collection("logcred").document(userid).update(updates);
             updateFuture.get();
         } else {
             throw new RuntimeException("Invalid username");
@@ -253,7 +255,7 @@ public class FirestoreService {
             Map<String, Object> updates = new HashMap<>();
             updates.put("status", "inactive");
             updates.put("datemodified", Calendar.getInstance().getTime());
-            ApiFuture<Void> updateFuture = db.collection("logcred").document(userid).update(updates);
+            ApiFuture<WriteResult> updateFuture = db.collection("logcred").document(userid).update(updates);
             updateFuture.get();
         } else {
             throw new RuntimeException("Invalid username");
@@ -286,7 +288,7 @@ public class FirestoreService {
             updates.put("description", description);
             updates.put("datemodified", Calendar.getInstance().getTime());
 
-            ApiFuture<Void> updateFuture = documentSnapshot.getReference().update(updates);
+            ApiFuture<WriteResult> updateFuture = documentSnapshot.getReference().update(updates);
             updateFuture.get();
         } else {
             throw new RuntimeException("Document not found or unauthorized access");
@@ -301,7 +303,7 @@ public class FirestoreService {
             updates.put("poststatus", "inactive");
             updates.put("datemodified", Calendar.getInstance().getTime());
 
-            ApiFuture<Void> updateFuture = documentSnapshot.getReference().update(updates);
+            ApiFuture<WriteResult> updateFuture = documentSnapshot.getReference().update(updates);
             updateFuture.get();
         } else {
             throw new RuntimeException("Document not found or unauthorized access");
@@ -312,7 +314,7 @@ public class FirestoreService {
         ApiFuture<QuerySnapshot> future = db.collection("post").orderBy("datecreated", Query.Direction.DESCENDING).get();
         QuerySnapshot qs = future.get();
         if (qs != null && !qs.isEmpty()) {
-            List<ApiFuture<String>> usernameFutures = new ArrayList<>();
+            List<ApiFuture<DocumentSnapshot>> usernameFutures = new ArrayList<>();
             List<String> authornames = new ArrayList<>();
             List<String> imageURLS = new ArrayList<>();
             List<String> dates = new ArrayList<>();
@@ -381,7 +383,7 @@ public class FirestoreService {
         ApiFuture<QuerySnapshot> future = db.collection("post").orderBy("datecreated", Query.Direction.DESCENDING).get();
         QuerySnapshot qs = future.get();
         if (qs != null && !qs.isEmpty()) {
-            List<ApiFuture<String>> usernameFutures = new ArrayList<>();
+            List<ApiFuture<DocumentSnapshot>> usernameFutures = new ArrayList<>();
             List<String> authornames = new ArrayList<>();
             List<String> imageURLS = new ArrayList<>();
             List<String> dates = new ArrayList<>();
