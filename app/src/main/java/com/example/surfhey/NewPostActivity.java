@@ -1,4 +1,3 @@
-// File: NewPostActivity.java
 package com.example.surfhey;
 
 import androidx.annotation.NonNull;
@@ -8,7 +7,6 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.icu.util.Calendar;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,10 +18,17 @@ import android.widget.ImageView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.Timestamp;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class NewPostActivity extends AppCompatActivity {
     FirestoreService FSdb;
@@ -134,7 +139,6 @@ public class NewPostActivity extends AppCompatActivity {
             }
         });
 
-        // Find the AppCompatButton and set up the click listener for Create Survey button
         Button BtnCreateSurvey = findViewById(R.id.btnCreateSurvey);
         try {
             if (!CreateSurveyActivity.title.isEmpty()) {
@@ -189,73 +193,69 @@ public class NewPostActivity extends AppCompatActivity {
     }
 
     private void publishPost(String imageUrl) {
-        Timestamp timestamp = new Timestamp(calendar.getTime());
+        Date date = calendar.getTime();
+        Timestamp timestamp = Timestamp.ofTimeSecondsAndNanos(date.getTime() / 1000, (int) ((date.getTime() % 1000) * 1000000));
         EditText postDescription = findViewById(R.id.text_area);
         EditText surveyGoal = findViewById(R.id.editTextNumber);
 
         if (update) {
-            FSdb.updatePost(imageUrl, CreateSurveyActivity.title, postDescription.getText().toString(), postID);
+            try {
+                FSdb.updatePost(imageUrl, CreateSurveyActivity.title, postDescription.getText().toString(), postID);
 
-            List<SurveyDatabaseHelper.Question> statementAndChoices = SQdb.getStatementsAndChoices();
+                List<SurveyDatabaseHelper.Question> statementAndChoices = SQdb.getStatementsAndChoices();
 
-            for (SurveyDatabaseHelper.Question question : statementAndChoices) {
-                List<String> choices = new ArrayList<>();
-                for (SurveyDatabaseHelper.Choice choice : question.getChoices()) {
-                    choices.add(choice.getChoice());
+                for (SurveyDatabaseHelper.Question question : statementAndChoices) {
+                    List<String> choices = new ArrayList<>();
+                    for (SurveyDatabaseHelper.Choice choice : question.getChoices()) {
+                        choices.add(choice.getChoice());
+                    }
+
+                    String surveyID = question.getSurveyID();
+                    if (surveyID != null && !surveyID.isEmpty()) {
+                        FSdb.updateSurvey(LoginActivity.userID, timestamp, Long.parseLong(surveyGoal.getText().toString()), surveyID, question.getQuestion(), choices);
+                    } else {
+                        FSdb.createSurvey(LoginActivity.userID, timestamp, Long.parseLong(surveyGoal.getText().toString()), postID, question.getQuestion(), choices);
+                    }
                 }
 
-                String surveyID = question.getSurveyID();
-                if (surveyID != null && !surveyID.isEmpty()) {
-                    FSdb.updateSurvey(LoginActivity.userID, timestamp,
-                            Long.parseLong(surveyGoal.getText().toString()), surveyID, question.getQuestion(), choices);
-                } else {
-                    FSdb.createSurvey(LoginActivity.userID, timestamp,
-                            Long.parseLong(surveyGoal.getText().toString()), postID, question.getQuestion(), choices);
-                }
+                Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
+                startActivity(intent);
+                goal = "";
+                deskripsi = "";
+                time = "";
+                imageurl = "";
+                CreateSurveyActivity.title = "";
+                update = false;
+                finish();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.w("FirestoreService", "Error updating post", e);
             }
+        } else {
+            try {
+                String newPostID = FSdb.createPost(LoginActivity.userID, imageUrl, CreateSurveyActivity.title, postDescription.getText().toString());
 
-            Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
-            startActivity(intent);
-            goal = "";
-            deskripsi = "";
-            time = "";
-            imageurl = "";
-            CreateSurveyActivity.title = "";
-            update = false;
-            finish();
-        } else if (!update) {
-            FSdb.createPost(LoginActivity.userID, imageUrl, CreateSurveyActivity.title, postDescription.getText().toString())
-                    .addOnCompleteListener(new OnCompleteListener<String>() {
-                        @Override
-                        public void onComplete(@NonNull Task<String> task) {
-                            if (task.isSuccessful()) {
-                                postID = task.getResult();
+                List<SurveyDatabaseHelper.Question> statementAndChoices = SQdb.getStatementsAndChoices();
 
-                                List<SurveyDatabaseHelper.Question> statementAndChoices = SQdb.getStatementsAndChoices();
+                for (SurveyDatabaseHelper.Question question : statementAndChoices) {
+                    List<String> choices = new ArrayList<>();
+                    for (SurveyDatabaseHelper.Choice choice : question.getChoices()) {
+                        choices.add(choice.getChoice());
+                    }
 
-                                for (SurveyDatabaseHelper.Question question : statementAndChoices) {
-                                    List<String> choices = new ArrayList<>();
-                                    for (SurveyDatabaseHelper.Choice choice : question.getChoices()) {
-                                        choices.add(choice.getChoice());
-                                    }
+                    FSdb.createSurvey(LoginActivity.userID, timestamp, Long.parseLong(surveyGoal.getText().toString()), newPostID, question.getQuestion(), choices);
+                }
 
-                                    FSdb.createSurvey(LoginActivity.userID, timestamp,
-                                            Long.parseLong(surveyGoal.getText().toString()), postID, question.getQuestion(), choices);
-                                }
-
-                                Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
-                                startActivity(intent);
-                                CreateSurveyActivity.title = "";
-                                goal = "";
-                                deskripsi = "";
-                                time = "";
-                                update = false;
-                                finish();
-                            } else {
-                                Log.w("FirestoreService", "Error creating post", task.getException());
-                            }
-                        }
-                    });
+                Intent intent = new Intent(NewPostActivity.this, MainActivity.class);
+                startActivity(intent);
+                CreateSurveyActivity.title = "";
+                goal = "";
+                deskripsi = "";
+                time = "";
+                update = false;
+                finish();
+            } catch (ExecutionException | InterruptedException e) {
+                Log.w("FirestoreService", "Error creating post", e);
+            }
         }
     }
 

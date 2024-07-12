@@ -1,6 +1,6 @@
 package com.example.surfhey.modelItem;
 
-import com.google.firebase.Timestamp;
+import com.google.cloud.Timestamp;
 
 public class itemSurf {
     public static String[] itemAuthorname = new String[0];

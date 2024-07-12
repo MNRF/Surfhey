@@ -19,6 +19,7 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteBatch;
 import com.google.cloud.firestore.WriteResult;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.example.surfhey.FirestoreConfig;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,7 +34,8 @@ public class FirestoreService {
     private Firestore db;
 
     public FirestoreService() {
-        db = FirestoreOptions.getDefaultInstance().getService();
+        this.db = FirestoreConfig.getFirestore();
+        //db = FirestoreOptions.getDefaultInstance().getService();
     }
 
     public void createAccount(String username, String userid, String userpassword) {
@@ -53,38 +55,27 @@ public class FirestoreService {
         return !querySnapshot.isEmpty();
     }
 
-    public boolean isUserIDExist(String userID) throws ExecutionException, InterruptedException {
-        ApiFuture<DocumentSnapshot> future = db.collection("logcred").document(userID).get();
-        DocumentSnapshot documentSnapshot = future.get();
-        return documentSnapshot.exists();
+    public ApiFuture<DocumentSnapshot> isUserIDExist(String userID) {
+        return db.collection("logcred").document(userID).get();
     }
 
-    public boolean isLogCredValid(String username, String userpassword) throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> future = db.collection("logcred").whereEqualTo("username", username)
-                .whereEqualTo("userpassword", userpassword).whereEqualTo("status", "active").get();
-        QuerySnapshot querySnapshot = future.get();
-        return !querySnapshot.isEmpty();
+    public ApiFuture<QuerySnapshot> isLogCredValid(String username, String userpassword) {
+        return db.collection("logcred")
+                .whereEqualTo("username", username)
+                .whereEqualTo("userpassword", userpassword)
+                .whereEqualTo("status", "active")
+                .get();
     }
 
-    public String getIDbyLogCred(String username, String userpassword) throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> future = db.collection("logcred").whereEqualTo("username", username)
-                .whereEqualTo("userpassword", userpassword).get();
-        QuerySnapshot querySnapshot = future.get();
-        if (!querySnapshot.isEmpty()) {
-            return querySnapshot.getDocuments().get(0).getId();
-        } else {
-            throw new RuntimeException("No matching document found");
-        }
+    public ApiFuture<QuerySnapshot> getIDbyLogCred(String username, String userpassword) {
+        return db.collection("logcred")
+                .whereEqualTo("username", username)
+                .whereEqualTo("userpassword", userpassword)
+                .get();
     }
 
-    public String getUsernamebyUserID(String userID) throws ExecutionException, InterruptedException {
-        ApiFuture<DocumentSnapshot> future = db.collection("logcred").document(userID).get();
-        DocumentSnapshot documentSnapshot = future.get();
-        if (documentSnapshot.exists()) {
-            return documentSnapshot.getString("username");
-        } else {
-            throw new RuntimeException("No matching document found");
-        }
+    public ApiFuture<DocumentSnapshot> getUsernamebyUserID(String userID) {
+        return db.collection("logcred").document(userID).get();
     }
 
     public String getUserPasswordbyUserID(String userID) throws ExecutionException, InterruptedException {
@@ -234,18 +225,12 @@ public class FirestoreService {
         }
     }
 
-    public void updatePassword(String username, String userid, String newPassword) throws ExecutionException, InterruptedException {
-        ApiFuture<DocumentSnapshot> future = db.collection("logcred").document(userid).get();
-        DocumentSnapshot documentSnapshot = future.get();
-        if (documentSnapshot.exists() && documentSnapshot.getString("username").equals(username)) {
-            Map<String, Object> updates = new HashMap<>();
-            updates.put("userpassword", newPassword);
-            updates.put("datemodified", Calendar.getInstance().getTime());
-            ApiFuture<WriteResult> updateFuture = db.collection("logcred").document(userid).update(updates);
-            updateFuture.get();
-        } else {
-            throw new RuntimeException("Invalid username");
-        }
+    public ApiFuture<WriteResult> updatePassword(String username, String userid, String newPassword) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("userpassword", newPassword);
+        updates.put("datemodified", Calendar.getInstance().getTime());
+
+        return db.collection("logcred").document(userid).update(updates);
     }
 
     public void deleteAccount(String username, String userid) throws ExecutionException, InterruptedException {

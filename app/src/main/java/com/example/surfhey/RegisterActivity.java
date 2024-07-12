@@ -42,23 +42,31 @@ public class RegisterActivity extends AppCompatActivity {
             String userID = userIDEditText.getText().toString();
             String password = userpasswordEditText.getText().toString();
 
-            try {
-                boolean usernameExists = FSdb.isUsernameExist(username);
-                if (!usernameExists) {
-                    boolean userIDExists = FSdb.isUserIDExist(userID);
-                    if (!userIDExists) {
-                        FSdb.createAccount(username, userID, password);
-                        Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
-                        startActivity(intent);
-                    } else {
-                        Log.w(TAG, "User ID already exists");
-                    }
-                } else {
-                    Log.w(TAG, "Username already exists");
+            new Thread(() -> {
+                try {
+                    // Check if username exists
+                    boolean usernameExists = FSdb.isUsernameExist(username);
+
+                    // Check if userID exists
+                    boolean userIDExists = FSdb.isUserIDExist(userID).get().exists();
+
+                    runOnUiThread(() -> {
+                        if (!usernameExists) {
+                            if (!userIDExists) {
+                                FSdb.createAccount(username, userID, password);
+                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                startActivity(intent);
+                            } else {
+                                Log.w(TAG, "User ID already exists");
+                            }
+                        } else {
+                            Log.w(TAG, "Username already exists");
+                        }
+                    });
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.e(TAG, "Error checking if username or userID exists", e);
                 }
-            } catch (ExecutionException | InterruptedException e) {
-                Log.e(TAG, "Error checking if username or userID exists", e);
-            }
+            }).start();
         });
     }
 }

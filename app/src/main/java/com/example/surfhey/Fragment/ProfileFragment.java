@@ -21,10 +21,10 @@ import com.example.surfhey.R;
 import com.example.surfhey.adapter.surfGridAdapter;
 import com.example.surfhey.modelItem.itemSurf;
 import com.example.surfhey.modelItem.modelSurf;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.cloud.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class ProfileFragment extends Fragment {
     private static final String TAG = "FirestoreService";
@@ -67,51 +67,31 @@ public class ProfileFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
         userName = view.findViewById(R.id.tvProfile);
         FSdb = new FirestoreService();
-        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
-                (new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (task.isSuccessful()) {
-                            userName.setText(task.getResult());
-                        } else {
-                            Log.w(TAG, "Error retrieving username", task.getException());
-                        }
-                    }
-                });
+
+        fetchUsername();
+
         userID = view.findViewById(R.id.textView15);
         userID.setText(LoginActivity.userID);
+
         surveyCreated = view.findViewById(R.id.textView16);
-        FSdb.getSurveyCreatedbyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
-            @Override
-            public void onComplete(@NonNull Task<String> task) {
-                if (task.isSuccessful()) {
-                    surveyCreated.setText(task.getResult());
-                } else {
-                    Log.e(TAG, "Error retrieving survey count", task.getException());
-                }
-            }
-        });
+        fetchSurveyCreated();
 
         recycleGrid = view.findViewById(R.id.recycleGrid);
         recycleGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
 
-        // Initialize empty data list and adapter
         surfList = new ArrayList<>();
         surfGridAdapter = new surfGridAdapter(surfList, getContext());
         recycleGrid.setAdapter(surfGridAdapter);
 
         fetchDataAndSetupRecyclerView();
 
-        // Find the ImageView and set up the click listener
         ImageView optionImageView = view.findViewById(R.id.Option_btn);
         optionImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Create an intent to start OptionActivity
                 Intent intent = new Intent(getActivity(), OptionActivity.class);
                 startActivity(intent);
             }
@@ -119,68 +99,73 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
-    private void fetchDataAndSetupRecyclerView() {
-        FSdb.getCurrentUserPostAndUpdateItems(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    updateRecyclerViewData();
+    private void fetchUsername() {
+        new Thread(() -> {
+            try {
+                DocumentSnapshot document = FSdb.getUsernamebyUserID(LoginActivity.userID).get();
+                if (document.exists()) {
+                    requireActivity().runOnUiThread(() -> userName.setText(document.getString("username")));
                 } else {
-                    Log.e(TAG, "Failed to fetch data from FirestoreService", task.getException());
+                    Log.w(TAG, "No such document");
                 }
+            } catch (InterruptedException | ExecutionException e) {
+                Log.w(TAG, "Error getting documents.", e);
             }
-        });
+        }).start();
+    }
+
+    private void fetchSurveyCreated() {
+        new Thread(() -> {
+            try {
+                String surveyCount = FSdb.getSurveyCreatedbyUserID(LoginActivity.userID);
+                requireActivity().runOnUiThread(() -> surveyCreated.setText(surveyCount));
+            } catch (InterruptedException | ExecutionException e) {
+                Log.e(TAG, "Error getting documents.", e);
+            }
+        }).start();
+    }
+
+    private void fetchDataAndSetupRecyclerView() {
+        new Thread(() -> {
+            try {
+                FSdb.getCurrentUserPostAndUpdateItems(LoginActivity.userID);
+                updateRecyclerViewData();
+            } catch (InterruptedException | ExecutionException e) {
+                Log.e(TAG, "Failed to fetch data from FirestoreService", e);
+            }
+        }).start();
     }
 
     private void updateRecyclerViewData() {
-        // Simulate a delay to avoid blocking the UI thread
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                surfList.clear();
-                for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
-                    modelSurf modelSurf = new modelSurf(
-                            itemSurf.itemAuthorname[i],
-                            itemSurf.itemTitle[i],
-                            itemSurf.itemDate[i],
-                            itemSurf.itemImageURL[i],
-                            itemSurf.itemDetail[i],
-                            itemSurf.itemLikes[i],
-                            itemSurf.itemPostID[i]
-                    );
-                    surfList.add(modelSurf);
-                }
-
-                // Update the RecyclerView on the main thread
-                requireActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (surfList.isEmpty()) {
-                            Log.d(TAG, "RecyclerView Data: No data available");
-                        } else {
-                            Log.d(TAG, "RecyclerView Data: " + surfList.size() + " items loaded");
-                        }
-                        surfGridAdapter.notifyDataSetChanged();
-                    }
-                });
+        new Thread(() -> {
+            surfList.clear();
+            for (int i = 0; i < itemSurf.itemImageURL.length; i++) {
+                modelSurf modelSurf = new modelSurf(
+                        itemSurf.itemAuthorname[i],
+                        itemSurf.itemTitle[i],
+                        itemSurf.itemDate[i],
+                        itemSurf.itemImageURL[i],
+                        itemSurf.itemDetail[i],
+                        itemSurf.itemLikes[i],
+                        itemSurf.itemPostID[i]
+                );
+                surfList.add(modelSurf);
             }
+
+            requireActivity().runOnUiThread(() -> {
+                if (surfList.isEmpty()) {
+                    Log.d(TAG, "RecyclerView Data: No data available");
+                } else {
+                    Log.d(TAG, "RecyclerView Data: " + surfList.size() + " items loaded");
+                }
+                surfGridAdapter.notifyDataSetChanged();
+            });
         }).start();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh data here when fragment resumes
-        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
-                (new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (task.isSuccessful()) {
-                            userName.setText(task.getResult());
-                        } else {
-                            Log.w(TAG, "Error retrieving username", task.getException());
-                        }
-                    }
-                });
+        fetchUsername();
     }
 }

@@ -20,8 +20,16 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.WriteResult;
 
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "FirestoreService";
@@ -38,80 +46,57 @@ public class EditProfileActivity extends AppCompatActivity {
         db = new SurveyDatabaseHelper(this);
 
         ImageView imageView = findViewById(R.id.back_btn_editProfile);
-        imageView.setOnClickListener(view -> {
-            finish();
-        });
+        imageView.setOnClickListener(view -> finish());
 
         TextView userName = findViewById(R.id.editTextText3);
         TextView userID = findViewById(R.id.editTextText4);
         TextView saveButton = findViewById(R.id.button);
-        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener
-                (new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (task.isSuccessful()) {
-                            userName.setText(task.getResult());
-                            userID.setText(LoginActivity.userID);
-                        }else {
-                            Log.w(TAG, "Error retrieving username"
-                                    , task.getException());
-                        }
-                    }
-                });
+
+        try {
+            String username = FSdb.getUsernamebyUserID(LoginActivity.userID).get().getString("username");
+            userName.setText(username);
+            userID.setText(LoginActivity.userID);
+        } catch (ExecutionException | InterruptedException e) {
+            Log.w(TAG, "Error retrieving username", e);
+        }
 
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FSdb.getUserPasswordbyUserID(LoginActivity.userID).addOnCompleteListener
-                        (new OnCompleteListener<String>() {
-                            @Override
-                            public void onComplete(@NonNull Task<String> task) {
-                                if (task.isSuccessful()) {
-                                    FSdb.updateUsername(LoginActivity.userID, task.getResult()
-                                            , userName.getText().toString());
-                                    Toast.makeText(EditProfileActivity.this, "Username successfully updated", Toast.LENGTH_SHORT).show();
-
-                                }else {
-                                    Log.w(TAG, "Error updating username"
-                                            , task.getException());
-                                }
-                            }
-                        });
+                try {
+                    String currentPassword = FSdb.getUserPasswordbyUserID(LoginActivity.userID);
+                    FSdb.updateUsername(LoginActivity.userID, currentPassword, userName.getText().toString());
+                    Toast.makeText(EditProfileActivity.this, "Username successfully updated", Toast.LENGTH_SHORT).show();
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.w(TAG, "Error updating username", e);
+                }
             }
         });
 
         TextView tvEditPhoto = findViewById(R.id.tvEditPicture);
         tvEditPhoto.setOnClickListener(view -> {
-            Intent intent = new Intent(Intent.ACTION_PICK
-                    , MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             startActivityForResult(intent, PICK_IMAGE_REQUEST);
         });
+
         Button BtnBottomBar = findViewById(R.id.btnBottomBar);
         BtnBottomBar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog
-                        (EditProfileActivity.this);
-                View view1 = LayoutInflater.from(EditProfileActivity.this)
-                        .inflate(R.layout.bottom_sheet_change, null);
+                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(EditProfileActivity.this);
+                View view1 = LayoutInflater.from(EditProfileActivity.this).inflate(R.layout.bottom_sheet_change, null);
                 bottomSheetDialog.setContentView(view1);
                 bottomSheetDialog.show();
 
                 TextInputEditText editText = view1.findViewById(R.id.editText);
                 MaterialButton dismissBtn = view1.findViewById(R.id.dismiss);
 
-                FSdb.getUserPasswordbyUserID(LoginActivity.userID).addOnCompleteListener
-                        (new OnCompleteListener<String>() {
-                            @Override
-                            public void onComplete(@NonNull Task<String> task) {
-                                if (task.isSuccessful()) {
-                                    editText.setText(task.getResult());
-                                }else {
-                                    Log.w(TAG, "Error retrieving user password"
-                                            , task.getException());
-                                }
-                            }
-                        });
+                try {
+                    String currentPassword = FSdb.getUserPasswordbyUserID(LoginActivity.userID);
+                    editText.setText(currentPassword);
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.w(TAG, "Error retrieving user password", e);
+                }
 
                 dismissBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -119,35 +104,22 @@ public class EditProfileActivity extends AppCompatActivity {
                         if (Objects.requireNonNull(editText.getText()).toString().isEmpty()) {
                             bottomSheetDialog.dismiss();
                         } else {
-                            /*Toast.makeText(EditProfileActivity.this
-                                    , editText.getText().toString()
-                                    , Toast.LENGTH_SHORT).show();*/
-
-                            FSdb.getUsernamebyUserID(LoginActivity.userID)
-                                    .addOnCompleteListener(new OnCompleteListener<String>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<String> task) {
-                                            if (task.isSuccessful()) {
-                                                FSdb.updatePassword(task.getResult(),LoginActivity.userID
-                                                        ,editText.getText().toString());
-                                            }else {
-                                                Log.w(TAG, "Error retrieving user password"
-                                                        , task.getException());
-                                            }
-                                        }
-                                    });
+                            try {
+                                String username = FSdb.getUsernamebyUserID(LoginActivity.userID).get().getString("username");
+                                FSdb.updatePassword(username, LoginActivity.userID, editText.getText().toString());
+                            } catch (ExecutionException | InterruptedException e) {
+                                Log.w(TAG, "Error updating password", e);
+                            }
 
                             bottomSheetDialog.dismiss();
                         }
                     }
                 });
 
-                bottomSheetDialog.setOnDismissListener
-                        (new DialogInterface.OnDismissListener() {
+                bottomSheetDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                     @Override
                     public void onDismiss(DialogInterface dialogInterface) {
-                        Toast.makeText(EditProfileActivity.this
-                                , "Bottom sheet dismissed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EditProfileActivity.this, "Bottom sheet dismissed", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -174,53 +146,19 @@ public class EditProfileActivity extends AppCompatActivity {
                 ButtonYes.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        try {
+                            String username = FSdb.getUsernamebyUserID(LoginActivity.userID).get().getString("username");
+                            FSdb.deleteAccount(username, LoginActivity.userID);
+                            LoginActivity.userID = "";
+                            db.removeLoginCredentials();
+                            Intent intent = new Intent(EditProfileActivity.this, LoginActivity.class);
+                            startActivity(intent);
+                            Toast.makeText(EditProfileActivity.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } catch (ExecutionException | InterruptedException e) {
+                            Log.w(TAG, "Error deleting user account", e);
+                        }
 
-                        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
-                            @Override
-                            public void onComplete(@NonNull Task<String> task) {
-                                if (task.isSuccessful()) {
-                                    String username = task.getResult();
-                                    FSdb.getUserPasswordbyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<String> task) {
-                                            if (task.isSuccessful()) {
-                                                String userpassword = task.getResult();
-                                                FSdb.deleteAccount(username, LoginActivity.userID, userpassword).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<Void> task) {
-                                                        if (task.isSuccessful()) {
-                                                            LoginActivity.userID = "";
-                                                            db.removeLoginCredentials();
-                                                            Intent intent = new Intent(EditProfileActivity.this, LoginActivity.class);
-                                                            startActivity(intent);
-                                                            Toast.makeText(EditProfileActivity.this, "Account deleted succesfuly", Toast.LENGTH_SHORT);
-                                                            finish();
-                                                        }else {
-                                                            Log.w(TAG, "Error deleting user account"
-                                                                    , task.getException());
-                                                        }
-                                                    }
-                                                });
-                                            }else {
-                                                Log.w(TAG, "Error retrieving user password"
-                                                        , task.getException());
-                                            }
-                                        }
-                                    });
-                                }else {
-                                    Log.w(TAG, "Error retrieving user name"
-                                            , task.getException());
-                                }
-                            }
-                        });
-
-                        bottomSheetDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(DialogInterface dialogInterface) {
-                                Toast.makeText(EditProfileActivity.this, "Account Deletion Successfull", Toast.LENGTH_SHORT).show();
-                                // Toast.makeText(LoginActivity.this, text1, Toast.LENGTH_SHORT).show();
-                            }
-                        });
                         bottomSheetDialog.dismiss();
                     }
                 });

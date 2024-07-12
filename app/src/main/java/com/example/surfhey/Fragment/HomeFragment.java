@@ -22,8 +22,13 @@ import com.example.surfhey.modelItem.modelSurf;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class HomeFragment extends Fragment {
 
@@ -78,16 +83,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchDataAndSetupRecyclerView() {
-        FSdb.getPostAndUpdateItems().addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    setupRecyclerView();
-                } else {
-                    Log.e("HomeFragment", "Failed to fetch data from FirestoreService", task.getException());
-                }
-            }
-        });
+        try {
+            FSdb.getPostAndUpdateItems();
+            setupRecyclerView();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.e("HomeFragment", "Failed to fetch data from FirestoreService", e);
+        }
     }
 
     private void setupRecyclerView() {

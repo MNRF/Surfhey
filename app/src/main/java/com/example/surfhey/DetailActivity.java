@@ -23,6 +23,22 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.cloud.Timestamp;
+import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
+import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.WriteBatch;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 public class DetailActivity extends AppCompatActivity {
     private ProgressBar progressBar;
@@ -39,14 +55,6 @@ public class DetailActivity extends AppCompatActivity {
     private String[][] questionAndChoices;
     private String selectedAnswer;
     private RadioButton selectedRadioButton;
-
-/*    private String[] questionTitles = {
-            "Mengenal Cara Kamu Manage Waktu!",
-            "Apakah kamu sering kesusahan dalam mengerjakan kegiatan antara satu dengan yang lainnya?",
-            "Bagaimana kamu mengatur prioritas tugas- tugas harian?",
-            "Apakah kamu merasa waktu yang kamu miliki cukup untuk menyelesaikan semua tugas?",
-            "Seberapa sering kamu membuat jadwal atau to-do list?"
-    };*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,66 +75,39 @@ public class DetailActivity extends AppCompatActivity {
 
         Button btnTakeSurvey = findViewById(R.id.btnTakeSurvey);
 
-        FSdb.getSurveyGoalbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Integer>() {
-            @Override
-            public void onComplete(@NonNull Task<Integer> task) {
-                if (task.isSuccessful()) {
-                    int goal;
-                    goal = task.getResult();
-                    // Fetch current sample
-                    FSdb.getCurrentSurveyTotalbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Integer>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Integer> task1) {
-                            if (task1.isSuccessful()) {
-                                int currentSample;
-                                currentSample = task1.getResult();
-                                String tmp1 = String.valueOf(currentSample);
-                                String tmp2 = String.valueOf(goal);
-                                // Update UI
-                                tvSurveyGoal.setText(tmp1 + "/" + tmp2);
-                                if (currentSample >= goal){
-                                    btnTakeSurvey.setClickable(false);
-                                    btnTakeSurvey.setText("The goal has been reached!");
-                                    btnTakeSurvey.setBackgroundColor(Color.DKGRAY);
-                                }
-                            } else {
-                                Log.w("FirestoreService", "Error fetching current sample: ", task1.getException());
-                            }
-                        }
-                    });
-
-                } else {
-                    Log.w("FirestoreService", "Error fetching goal: ", task.getException());
-                }
+        try {
+            int goal = FSdb.getSurveyGoalbyPostID(postID);
+            int currentSample = FSdb.getCurrentSurveyTotalbyPostID(postID);
+            String tmp1 = String.valueOf(currentSample);
+            String tmp2 = String.valueOf(goal);
+            tvSurveyGoal.setText(tmp1 + "/" + tmp2);
+            if (currentSample >= goal) {
+                btnTakeSurvey.setClickable(false);
+                btnTakeSurvey.setText("The goal has been reached!");
+                btnTakeSurvey.setBackgroundColor(Color.DKGRAY);
             }
-        });
+        } catch (ExecutionException | InterruptedException e) {
+            Log.w("FirestoreService", "Error fetching survey goal or current sample", e);
+        }
 
         TextView detailTextView = findViewById(R.id.tvDetail);
         detailTextView.setText(detail);
 
         TextView dateTextView = findViewById(R.id.tvDate);
-        FSdb.getDateEndbyPostID(postID).addOnCompleteListener(new OnCompleteListener<Timestamp>() {
-            @Override
-            public void onComplete(@NonNull Task<Timestamp> task) {
-                if (task.isSuccessful()) {
-                    Timestamp dateEndTS;
-                    dateEndTS = task.getResult();
-                    if (dateEndTS != null) {
-                        String dateEndString = dateEndTS.toDate().toString();
-                        dateTextView.setText("Until: " + dateEndString);
-                        if (Timestamp.now().compareTo(dateEndTS) >= 1 ){
-                            btnTakeSurvey.setClickable(false);
-                            btnTakeSurvey.setText("The time has ended!");
-                            btnTakeSurvey.setBackgroundColor(Color.DKGRAY);
-                        }
-                    } else {
-                        Log.w("FirestoreService", "dateEndTS is null");
-                    }
-                } else {
-                    Log.w("FirestoreService", "Error fetching dateEnd: ", task.getException());
+        try {
+            Timestamp dateEndTS = FSdb.getDateEndbyPostID(postID);
+            if (dateEndTS != null) {
+                String dateEndString = dateEndTS.toDate().toString();
+                dateTextView.setText("Until: " + dateEndString);
+                if (Timestamp.now().compareTo(dateEndTS) >= 1) {
+                    btnTakeSurvey.setClickable(false);
+                    btnTakeSurvey.setText("The time has ended!");
+                    btnTakeSurvey.setBackgroundColor(Color.DKGRAY);
                 }
             }
-        });
+        } catch (ExecutionException | InterruptedException e) {
+            Log.w("FirestoreService", "Error fetching date end", e);
+        }
 
         TextView authorName = findViewById(R.id.textView4);
         authorName.setText(authorname);
@@ -149,38 +130,38 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         ImageView btnBack = findViewById(R.id.back_btn);
-        btnBack.setOnClickListener(v -> {
-            finish();
-        });
+        btnBack.setOnClickListener(v -> finish());
 
-        btnTakeSurvey.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showBottomSheetDialog();
-            }
-        });
-
+        btnTakeSurvey.setOnClickListener(v -> showBottomSheetDialog());
 
         ivMore = findViewById(R.id.ivMore);
-        FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<String>() {
+        try {
+            DocumentSnapshot documentSnapshot = FSdb.getUsernamebyUserID(LoginActivity.userID).get();
+            if (documentSnapshot != null && documentSnapshot.exists() && !Objects.equals(documentSnapshot.getString("username"), authorname)) {
+                ivMore.setVisibility(View.GONE);
+            } else {
+                ivMore.setOnClickListener(v -> showBottomSheetMore());
+            }
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        /*FSdb.getUsernamebyUserID(LoginActivity.userID).addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onComplete(@NonNull Task<String> task) {
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    if (!task.getResult().equals(authorname)) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document != null && document.exists() && !document.getString("username").equals(authorname)) {
                         ivMore.setVisibility(View.GONE);
                     } else {
-                        ivMore.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                showBottomSheetMore();
-                            }
-                        });
+                        ivMore.setOnClickListener(v -> showBottomSheetMore());
                     }
                 } else {
                     Log.w("FirestoreService", task.getException());
                 }
             }
-        });
+        });*/
     }
 
     private void showBottomSheetMore() {
@@ -188,65 +169,47 @@ public class DetailActivity extends AppCompatActivity {
         View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_post, null);
         buttonEditSurvey = view1.findViewById(R.id.button4);
 
-        buttonEditSurvey.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                bottomSheetDialog.dismiss();
-                Intent intent = new Intent(DetailActivity.this, NewPostActivity.class);
-                intent.putExtra("authorname", authorname);
-                intent.putExtra("title", judulSurvey);
-                intent.putExtra("date", date);
-                intent.putExtra("dateAgo", dateAgo);
-                intent.putExtra("image", imageUrl);
-                intent.putExtra("detail", detail);
-                intent.putExtra("likes", likes);
-                intent.putExtra("postID", postID);
-                startActivity(intent);
-            }
+        buttonEditSurvey.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
+            Intent intent = new Intent(DetailActivity.this, NewPostActivity.class);
+            intent.putExtra("authorname", authorname);
+            intent.putExtra("title", judulSurvey);
+            intent.putExtra("date", date);
+            intent.putExtra("dateAgo", dateAgo);
+            intent.putExtra("image", imageUrl);
+            intent.putExtra("detail", detail);
+            intent.putExtra("likes", likes);
+            intent.putExtra("postID", postID);
+            startActivity(intent);
         });
 
         buttonDeleteSurvey = view1.findViewById(R.id.button5);
-        buttonDeleteSurvey.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                bottomSheetDialog.dismiss();
+        buttonDeleteSurvey.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
 
-                BottomSheetDialog bottomSheetDialog1 = new BottomSheetDialog(DetailActivity.this);
-                View view2 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_delete, null);
-                bottomSheetDialog1.setContentView(view2);
-                bottomSheetDialog1.show();
-                Button ButtonNo = view2.findViewById(R.id.btn_cancel_delete_post);
-                ButtonNo.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        bottomSheetDialog1.dismiss();
-                    }
-                });
-                Button ButtonYes = view2.findViewById(R.id.btn_yes_delete_post);
-                ButtonYes.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        FSdb.deletePost(postID).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if (task.isSuccessful()) {
-                                    Toast.makeText(DetailActivity.this, "Post successfully deleted", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(DetailActivity.this, MainActivity.class);
-                                    startActivity(intent);
-                                    finish();
-                                } else {
-                                    Log.w("FSdb Post Deletion", task.getException());
-                                }
-                            }
-                        });
-                        bottomSheetDialog1.dismiss();
-                        BottomSheetDialog bottomSheetDialog2 = new BottomSheetDialog(DetailActivity.this);
-                        View view3 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_success, null);
-                        bottomSheetDialog2.setContentView(view3);
-                        bottomSheetDialog2.show();
-                    }
-                });
-            }
+            BottomSheetDialog bottomSheetDialog1 = new BottomSheetDialog(DetailActivity.this);
+            View view2 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_delete, null);
+            bottomSheetDialog1.setContentView(view2);
+            bottomSheetDialog1.show();
+            Button ButtonNo = view2.findViewById(R.id.btn_cancel_delete_post);
+            ButtonNo.setOnClickListener(v1 -> bottomSheetDialog1.dismiss());
+            Button ButtonYes = view2.findViewById(R.id.btn_yes_delete_post);
+            ButtonYes.setOnClickListener(v12 -> {
+                try {
+                    FSdb.deletePost(postID);
+                    Toast.makeText(DetailActivity.this, "Post successfully deleted", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(DetailActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.w("FSdb Post Deletion", e);
+                }
+                bottomSheetDialog1.dismiss();
+                BottomSheetDialog bottomSheetDialog2 = new BottomSheetDialog(DetailActivity.this);
+                View view3 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_success, null);
+                bottomSheetDialog2.setContentView(view3);
+                bottomSheetDialog2.show();
+            });
         });
         bottomSheetDialog.setContentView(view1);
         bottomSheetDialog.show();
@@ -264,60 +227,49 @@ public class DetailActivity extends AppCompatActivity {
         View view1 = LayoutInflater.from(DetailActivity.this).inflate(R.layout.bottom_sheet_question, null);
         bottomSheetDialog.setContentView(view1);
 
-        FSdb.getStatementAndAnswerByPostID(postID).addOnCompleteListener(new OnCompleteListener<String[][]>() {
-            @Override
-            public void onComplete(@NonNull Task<String[][]> task) {
-                if (task.isSuccessful()) {
-                    questionAndChoices = task.getResult();
-                    questionTexts = new String[questionAndChoices.length];
-                    for (int i = 0; i < questionAndChoices.length; i++) {
-                        questionTexts[i] = questionAndChoices[i][0];
-                    }
-                    progressBar = view1.findViewById(R.id.progressBar);
-                    questionNumber = view1.findViewById(R.id.tvQuestionNumber);
-                    questionText = view1.findViewById(R.id.tvQuestion);
-                    questionTitle = view1.findViewById(R.id.tvQuestionTitle);
-                    questionTitle.setText(judulSurvey);
-                    radioGroup = view1.findViewById(R.id.radioGroup);
-                    nextButton = view1.findViewById(R.id.btn_next_question);
-                    backButton = view1.findViewById(R.id.btn_back_question);
+        try {
+            questionAndChoices = FSdb.getStatementAndAnswerByPostID(postID);
+            questionTexts = new String[questionAndChoices.length];
+            for (int i = 0; i < questionAndChoices.length; i++) {
+                questionTexts[i] = questionAndChoices[i][0];
+            }
+            progressBar = view1.findViewById(R.id.progressBar);
+            questionNumber = view1.findViewById(R.id.tvQuestionNumber);
+            questionText = view1.findViewById(R.id.tvQuestion);
+            questionTitle = view1.findViewById(R.id.tvQuestionTitle);
+            questionTitle.setText(judulSurvey);
+            radioGroup = view1.findViewById(R.id.radioGroup);
+            nextButton = view1.findViewById(R.id.btn_next_question);
+            backButton = view1.findViewById(R.id.btn_back_question);
+            progressBar.setProgress(progressStatus);
+            updateQuestion();
+
+            nextButton.setOnClickListener(v -> {
+                updateAnswerTotal();
+                if (currentQuestion < questionTexts.length - 1) {
+                    currentQuestion++;
+                    progressStatus += 20;
                     progressBar.setProgress(progressStatus);
                     updateQuestion();
-
-                    nextButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            updateAnswerTotal();
-                            if (currentQuestion < questionTexts.length - 1) {
-                                currentQuestion++;
-                                progressStatus += 20;
-                                progressBar.setProgress(progressStatus);
-                                updateQuestion();
-                            } else {
-                                bottomSheetDialog.dismiss();
-                                showBottomSheetThank();
-                            }
-                        }
-                    });
-
-                    backButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            if (currentQuestion > 0) {
-                                currentQuestion--;
-                                progressStatus -= 20;
-                                progressBar.setProgress(progressStatus);
-                                updateQuestion();
-                            } else {
-                                bottomSheetDialog.dismiss();
-                            }
-                        }
-                    });
                 } else {
-                    Log.w("FirestoreService", "Error getting documents.", task.getException());
+                    bottomSheetDialog.dismiss();
+                    showBottomSheetThank();
                 }
-            }
-        });
+            });
+
+            backButton.setOnClickListener(v -> {
+                if (currentQuestion > 0) {
+                    currentQuestion--;
+                    progressStatus -= 20;
+                    progressBar.setProgress(progressStatus);
+                    updateQuestion();
+                } else {
+                    bottomSheetDialog.dismiss();
+                }
+            });
+        } catch (ExecutionException | InterruptedException e) {
+            Log.w("FirestoreService", "Error getting documents.", e);
+        }
 
         bottomSheetDialog.show();
     }
@@ -343,16 +295,15 @@ public class DetailActivity extends AppCompatActivity {
 
     private void updateAnswerTotal() {
         int selectedRadioButtonId = radioGroup.getCheckedRadioButtonId();
-        System.out.println(selectedRadioButtonId);
         if (selectedRadioButtonId != -1) {
-            RadioButton selectedRadioButton = radioGroup.findViewById(selectedRadioButtonId);//findViewById(selectedRadioButtonId);
-            System.out.println(selectedRadioButton);
+            RadioButton selectedRadioButton = radioGroup.findViewById(selectedRadioButtonId);
             if (selectedRadioButton != null) {
                 String selectedAnswer = selectedRadioButton.getText().toString();
-                System.out.println(selectedAnswer);
-                FSdb.incrementAnswerTotal(postID, questionTexts[currentQuestion], selectedAnswer)
-                        .addOnSuccessListener(aVoid -> Log.d("DetailActivity", "Answer total updated successfully"))
-                        .addOnFailureListener(e -> Log.w("DetailActivity", "Error updating answer total", e));
+                try {
+                    FSdb.incrementAnswerTotal(postID, questionTexts[currentQuestion], selectedAnswer);
+                } catch (ExecutionException | InterruptedException e) {
+                    Log.w("DetailActivity", "Error updating answer total", e);
+                }
             }
         } else {
             Log.w("DetailActivity", "No answer selected");
