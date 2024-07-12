@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.concurrent.ExecutionException;
 
@@ -20,6 +21,13 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        try {
+            FirestoreConfig.initialize(this);
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
 
         TextView loginButton = findViewById(R.id.goSignUp);
         EditText usernameEditText = findViewById(R.id.editTextText3);
@@ -36,7 +44,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         AppCompatButton signupButton = findViewById(R.id.button5);
         signupButton.setOnClickListener(view -> {
-            FSdb = new FirestoreService();
 
             String username = usernameEditText.getText().toString();
             String userID = userIDEditText.getText().toString();
@@ -54,12 +61,16 @@ public class RegisterActivity extends AppCompatActivity {
                         if (!usernameExists) {
                             if (!userIDExists) {
                                 FSdb.createAccount(username, userID, password);
-                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                Toast.makeText(this, "Account created succefully", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                                 startActivity(intent);
+                                finish();
                             } else {
                                 Log.w(TAG, "User ID already exists");
+                                Toast.makeText(this, "User ID already exist", Toast.LENGTH_SHORT).show();
                             }
                         } else {
+                            Toast.makeText(this, "Username already exist", Toast.LENGTH_SHORT).show();
                             Log.w(TAG, "Username already exists");
                         }
                     });

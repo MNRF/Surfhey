@@ -28,11 +28,20 @@ public class CreateSurveyActivity extends AppCompatActivity {
     private long surveyId;
     private LinearLayout questionListLayout;
     public static String title;
+    FirestoreService FSdb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_survey);
+
+        try {
+            FirestoreConfig.initialize(this);
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
 
         judulSurvey = getIntent().getStringExtra("title");
         date = getIntent().getStringExtra("date");

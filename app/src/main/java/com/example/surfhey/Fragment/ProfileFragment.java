@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.surfhey.FirestoreConfig;
 import com.example.surfhey.FirestoreService;
 import com.example.surfhey.LoginActivity;
 import com.example.surfhey.OptionActivity;
@@ -58,6 +59,13 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            FirestoreConfig.initialize(getActivity());
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);

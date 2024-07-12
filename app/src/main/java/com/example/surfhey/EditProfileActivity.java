@@ -42,7 +42,13 @@ public class EditProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editprofile);
 
-        FSdb = new FirestoreService();
+        try {
+            FirestoreConfig.initialize(this);
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
         db = new SurveyDatabaseHelper(this);
 
         ImageView imageView = findViewById(R.id.back_btn_editProfile);

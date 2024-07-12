@@ -57,7 +57,13 @@ public class NewPostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_post);
 
-        FSdb = new FirestoreService();
+        try {
+            FirestoreConfig.initialize(this);
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
         SQdb = new SurveyDatabaseHelper(this);
         cloudStorage = new CloudStorage(this);
 
@@ -200,6 +206,7 @@ public class NewPostActivity extends AppCompatActivity {
 
         if (update) {
             try {
+                System.out.println(imageUrl +" "+CreateSurveyActivity.title +" " +postDescription.getText().toString() +" "+postID);
                 FSdb.updatePost(imageUrl, CreateSurveyActivity.title, postDescription.getText().toString(), postID);
 
                 List<SurveyDatabaseHelper.Question> statementAndChoices = SQdb.getStatementsAndChoices();
@@ -209,7 +216,6 @@ public class NewPostActivity extends AppCompatActivity {
                     for (SurveyDatabaseHelper.Choice choice : question.getChoices()) {
                         choices.add(choice.getChoice());
                     }
-
                     String surveyID = question.getSurveyID();
                     if (surveyID != null && !surveyID.isEmpty()) {
                         FSdb.updateSurvey(LoginActivity.userID, timestamp, Long.parseLong(surveyGoal.getText().toString()), surveyID, question.getQuestion(), choices);

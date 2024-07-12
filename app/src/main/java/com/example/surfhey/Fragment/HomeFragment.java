@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.example.surfhey.FirestoreConfig;
 import com.example.surfhey.FirestoreService;
 import com.example.surfhey.R;
 import com.example.surfhey.adapter.surfListAdapter;
@@ -57,7 +58,13 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FSdb = new FirestoreService();
+        try {
+            FirestoreConfig.initialize(getActivity());
+            FSdb = new FirestoreService();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize Firestore", e);
+        }
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -68,6 +75,7 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         recycleViewSurf = view.findViewById(R.id.rv_post);
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext());

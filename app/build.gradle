@@ -15,6 +15,11 @@ android {
         versionName "1.0"
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -25,16 +30,6 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/INDEX.LIST'
-        exclude 'google/protobuf/field_mask.proto'
-        exclude 'google/protobuf/type.proto'
-        exclude 'google/protobuf/wrappers.proto'
-        exclude 'google/protobuf/timestamp.proto'
-        exclude 'google/protobuf/duration.proto'
-        exclude 'google/protobuf/api.proto'
-        exclude 'google/protobuf/source_context.proto'
-        exclude 'google/protobuf/empty.proto'
-        exclude 'google/protobuf/struct.proto'
-        exclude 'google/protobuf/any.proto'
     }
 }
 
@@ -49,17 +44,16 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 
     // Google Cloud
-    implementation('com.google.cloud:google-cloud-firestore:3.22.0') {
-        exclude group: 'com.google.protobuf', module: 'protobuf-javalite'
-    }
+    implementation 'com.google.cloud:google-cloud-firestore:3.23.0'
     implementation 'com.google.cloud:google-cloud-storage:2.13.1'
     implementation 'io.grpc:grpc-okhttp:1.62.2'
     implementation 'io.grpc:grpc-core:1.62.2'
     implementation 'io.grpc:grpc-stub:1.62.2'
-    //implementation 'io.grpc:grpc-protobuf-lite:1.62.2'
     implementation 'com.google.api.grpc:proto-google-common-protos:2.41.0'
-
     implementation 'com.google.api-client:google-api-client:2.0.0'
+
+    // Update Guava to the latest version
+    implementation 'com.google.guava:guava:32.1.1-android'
 
     implementation 'com.github.bumptech.glide:glide:4.12.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
